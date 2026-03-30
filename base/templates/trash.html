@@ -1,0 +1,38 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<center>
+  
+  <div class="container">
+    <p> TRASHED TO DO LISTS</p>
+    <table border="1">
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Operation</td>
+            <th>Delete</td>
+            
+        </tr>
+
+        {% for i in data %}
+        <tr>
+            
+            <td>{{ i.title }}</td>
+            <td>{{ i.desc }}</td>
+            <td>
+              <a href="{% url "recover" i.id %}">Recover</a>
+            </td>
+            <td>
+              <a href="{% url "hdelete" i.id %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    <div class="actions">
+    <a href="{% url "delete_all_per"%}"class="btn delete">DELETE ALL PERMENT</a>
+  
+</div>
+</center>
+{% endblock %}

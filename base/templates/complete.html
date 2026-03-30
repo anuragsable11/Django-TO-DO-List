@@ -1,0 +1,31 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<center>
+  <div class="container">
+    <p>COMPLETE TO DO LISTS</p>
+    <table border="1">
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Operation</td>
+        </tr>
+
+        {% for i in data %}
+        <tr>
+            
+            <td>{{ i.title }}</td>
+            <td>{{ i.desc }}</td>
+            <td>
+              <a href="{% url "recover" i.id %}">Recover</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    <div class="actions">
+    <a href="{% url 'restore_all' %}" class="btn complete">RESTORE ALL</a>
+    <a href="{% url 'delete_all' %}" class="btn delete">DELETE ALL</a>
+</center>
+{% endblock %}

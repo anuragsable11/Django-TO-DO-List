@@ -1,0 +1,47 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<center>
+    
+  <div class="container">
+    <p>TO DO LISTS</p>
+   
+    <table border="1">
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Operations</th>
+            <th>Operations</th>
+            <th>Status</th>
+        </tr>
+
+        {% for i in data %}
+        <tr>
+            
+            <td>{{ i.title }}</td>
+            <td>{{ i.desc }}</td>
+            <td>
+                <a href="{% url 'delete' i.id %}" class="redclass">DELETE</a>
+            </td>
+            <td>
+                <a href="{% url 'update' i.id %}" class="yellowclass">UPDATE</a>
+            </td>
+            <td>
+                <a href="{% url 'hcomplete' i.id %}" class="greenclass">COMPLETE</a>
+            </td>
+        </tr>
+        {% endfor %}
+       
+    </table>
+    </div>
+    <div class="actions">
+    <a href="{% url 'complete_all' %}" class="btn complete">COMPLETE ALL</a>
+    <a href="{% url 'delete_all' %}" class="btn delete">DELETE ALL</a>
+</div>
+    
+</center>
+ 
+    
+
+{% endblock %}

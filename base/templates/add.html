@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+ {% block content %}
+   <center>
+    <div class="add">
+    <h2>Create your ToDo List</h2>
+    <form action='' method="POST">
+      {% csrf_token %}
+      <label for=''>Title:</label>
+        <input type='text' name='title'></br>
+      <label for=''>Description:</label>
+        <input type='text' name='desc'/></br>  
+      <button>Submit</button> 
+      </div> 
+   </center>
+
+ {% endblock  %}

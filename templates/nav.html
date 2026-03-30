@@ -1,0 +1,15 @@
+{% load static %}
+<nav>
+        <div class='logo'>
+            <img src="{% static "images/to-do-list.png" %}"/>
+            <h1>TODO</h1>
+        </div>
+        <div class='links'>   
+            
+        <a href="{% url "home" %}">HOME</a>
+         <a href="{% url "add" %}">ADD</a>
+        <a href="{% url "complete" %}">COMPLETE</a>
+        <a href="{% url "trash" %}">TRASH</a>
+        <a href="{% url "about" %}">ABOUT</a>
+        </div>
+    </nav>
