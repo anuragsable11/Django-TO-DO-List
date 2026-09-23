@@ -1,47 +1,60 @@
 {% extends "main.html" %}
 
+{% block title %}Tasks{% endblock %}
+
 {% block content %}
 
-<center>
-    
-  <div class="container">
-    <p>TO DO LISTS</p>
-   
-    <table border="1">
-        <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Operations</th>
-            <th>Operations</th>
-            <th>Status</th>
-        </tr>
-
-        {% for i in data %}
-        <tr>
-            
-            <td>{{ i.title }}</td>
-            <td>{{ i.desc }}</td>
-            <td>
-                <a href="{% url 'delete' i.id %}" class="redclass">DELETE</a>
-            </td>
-            <td>
-                <a href="{% url 'update' i.id %}" class="yellowclass">UPDATE</a>
-            </td>
-            <td>
-                <a href="{% url 'hcomplete' i.id %}" class="greenclass">COMPLETE</a>
-            </td>
-        </tr>
-        {% endfor %}
-       
-    </table>
+<section class="page-head">
+    <div>
+        <h1 class="page-title">Your Mission List</h1>
+        <p class="page-sub">Every hero needs a plan. Here's yours!</p>
     </div>
-    <div class="actions">
-    <a href="{% url 'complete_all' %}" class="btn complete">COMPLETE ALL</a>
-    <a href="{% url 'delete_all' %}" class="btn delete">DELETE ALL</a>
+    <div class="burst burst-yellow" aria-label="{{ data|length }} open tasks">
+        <strong>{{ data|length }}</strong>
+        <span>task{{ data|length|pluralize }}</span>
+    </div>
+</section>
+
+{% if data %}
+<div class="panels">
+    {% for i in data %}
+    <article class="panel">
+        <span class="panel-num">#{{ forloop.counter }}</span>
+        <h2 class="panel-title">{{ i.title }}</h2>
+        <p class="bubble">{{ i.desc|default:"No details. Pure mystery!" }}</p>
+        <div class="panel-actions">
+            <form method="POST" action="{% url 'hcomplete' i.id %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-green">✔ Done</button>
+            </form>
+            <a href="{% url 'update' i.id %}" class="btn btn-sm btn-yellow">📝 Edit</a>
+            <form method="POST" action="{% url 'delete' i.id %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-red">🗑 Trash</button>
+            </form>
+        </div>
+    </article>
+    {% endfor %}
 </div>
-    
-</center>
- 
-    
+
+<div class="bulk-actions">
+    <a href="{% url 'add' %}" class="btn btn-blue">➕ New task</a>
+    <form method="POST" action="{% url 'complete_all' %}" class="inline-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-green"
+                data-confirm="Mark every task as done?">💥 Complete all</button>
+    </form>
+    <form method="POST" action="{% url 'delete_all' %}" class="inline-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-red"
+                data-confirm="Move every task to the trash?">🗑 Trash all</button>
+    </form>
+</div>
+{% else %}
+<div class="empty">
+    <p class="bubble bubble-big">All clear, hero! No tasks on the board.</p>
+    <a href="{% url 'add' %}" class="btn btn-blue">➕ Add your first task</a>
+</div>
+{% endif %}
 
 {% endblock %}

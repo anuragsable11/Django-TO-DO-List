@@ -1,0 +1,35 @@
+{% extends "main.html" %}
+
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+
+<section class="form-wrap">
+    <form method="POST" class="panel form-panel auth-panel" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <div class="burst burst-yellow auth-burst" aria-hidden="true"><strong>HEY!</strong></div>
+
+        <h1 class="form-title">Welcome back!</h1>
+        <p class="page-sub">Log in to see your missions.</p>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" role="alert">
+            {% for error in form.non_field_errors %}<p>💥 {{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        {% include "registration/form_fields.html" %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-blue">🚀 Log in</button>
+        </div>
+
+        <p class="auth-switch">
+            New here? <a href="{% url 'register' %}">Create an account</a>
+        </p>
+    </form>
+</section>
+
+{% endblock %}

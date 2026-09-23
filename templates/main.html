@@ -4,14 +4,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="{% static "style.css" %}">
+    <script>document.documentElement.classList.add('js');</script>
+    <title>{% block title %}Tasks{% endblock %} | Comic To-Do</title>
+    <link rel="icon" href="{% static 'images/to-do-list.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     {% include "nav.html" %}
-    {% block content %}{% endblock  %}
+
+    {% if messages %}
+    <div class="toasts" role="status">
+        {% for message in messages %}
+        <p class="toast toast-{{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="{% block main_class %}page{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Made with <span class="heart">❤️</span> by Anurag &nbsp;|&nbsp; To-Do Website 📝</p>
+    </footer>
+
+    <script>
+        // Ask before running destructive links, e.g. <a data-confirm="Sure?">
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('[data-confirm]');
+            if (link && !window.confirm(link.dataset.confirm)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
-<footer class="footer">
-    <p>Made with ❤️ by Anurag | To-Do Website 📝</p>
-</footer>
 </html>

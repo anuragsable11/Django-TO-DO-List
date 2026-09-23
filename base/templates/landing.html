@@ -1,0 +1,124 @@
+{% extends "main.html" %}
+{% load static %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block main_class %}landing{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-rays" aria-hidden="true"></div>
+    <span class="sfx sfx-pow" aria-hidden="true">POW!</span>
+    <span class="sfx sfx-zap" aria-hidden="true">ZAP!</span>
+    <span class="sfx sfx-bam" aria-hidden="true">BAM!</span>
+
+    <div class="hero-inner">
+        <div class="hero-copy">
+            <p class="hero-kicker hero-fade" style="--d: 0s">Issue #1 &middot; Your daily adventure</p>
+            <h1 class="hero-title">
+                <span class="pop-word" style="--i: 0">Get</span>
+                <span class="pop-word" style="--i: 1">stuff</span>
+                <span class="pop-word hero-title-hit" style="--i: 2">done!</span>
+            </h1>
+            <p class="bubble hero-bubble hero-fade" style="--d: 0.8s">
+                A to-do list with super powers. Add your tasks, knock them out
+                one by one, and celebrate every win.
+            </p>
+            <div class="hero-actions hero-fade" style="--d: 1s">
+                {% if user.is_authenticated %}
+                <a href="{% url 'add' %}" class="btn btn-lg btn-blue">➕ Add a task</a>
+                <a href="{% url 'home' %}" class="btn btn-lg btn-ghost">📋 See my tasks</a>
+                {% else %}
+                <a href="{% url 'register' %}" class="btn btn-lg btn-blue">🦸 Join free</a>
+                <a href="{% url 'login' %}" class="btn btn-lg btn-ghost">🔑 Log in</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Looping "adding tasks" demo, driven by landing.js -->
+        <div class="demo hero-fade" style="--d: 0.5s" aria-hidden="true">
+            <div class="demo-panel">
+                <div class="demo-head">
+                    <span>Today's missions</span>
+                    <span class="demo-dots"><i></i><i></i><i></i></span>
+                </div>
+                <div class="demo-input">
+                    <span class="demo-field"><span id="demo-typing"></span><span class="caret"></span></span>
+                    <span class="demo-add" id="demo-add">+</span>
+                </div>
+                <ul class="demo-list" id="demo-list"></ul>
+            </div>
+            <div class="burst burst-red demo-burst" id="demo-burst">
+                <strong>ALL</strong>
+                <span>done!</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if user.is_authenticated %}
+<!-- Live stats for the logged-in user -->
+<section class="section">
+    <div class="stats">
+        <a href="{% url 'home' %}" class="stat reveal" style="--i: 0">
+            <span class="burst burst-yellow"><strong data-count="{{ open_count }}">{{ open_count }}</strong></span>
+            <span class="stat-label">Missions waiting</span>
+        </a>
+        <a href="{% url 'complete' %}" class="stat reveal" style="--i: 1">
+            <span class="burst burst-green"><strong data-count="{{ done_count }}">{{ done_count }}</strong></span>
+            <span class="stat-label">Victories so far</span>
+        </a>
+        <a href="{% url 'trash' %}" class="stat reveal" style="--i: 2">
+            <span class="burst burst-pink"><strong data-count="{{ trash_count }}">{{ trash_count }}</strong></span>
+            <span class="stat-label">In the trash</span>
+        </a>
+    </div>
+</section>
+{% endif %}
+
+<!-- How it works -->
+<section class="section">
+    <h2 class="section-title reveal">How it works</h2>
+    <div class="steps">
+        <article class="panel step reveal" style="--i: 0">
+            <span class="panel-num">#1</span>
+            <span class="step-icon">✍️</span>
+            <h3 class="panel-title">Add it</h3>
+            <p class="bubble">Jot down anything on your mind, big or small.</p>
+        </article>
+        <article class="panel step reveal" style="--i: 1">
+            <span class="panel-num">#2</span>
+            <span class="step-icon">💪</span>
+            <h3 class="panel-title">Crush it</h3>
+            <p class="bubble">Hit Done when it's finished. It feels great.</p>
+        </article>
+        <article class="panel step reveal" style="--i: 2">
+            <span class="panel-num">#3</span>
+            <span class="step-icon">♻️</span>
+            <h3 class="panel-title">Oops? Recover it</h3>
+            <p class="bubble">Trashed something by mistake? Rescue it anytime.</p>
+        </article>
+    </div>
+</section>
+
+<!-- Final call to action -->
+<section class="section">
+    <div class="cta reveal">
+        <div class="cta-rays" aria-hidden="true"></div>
+        <h2 class="section-title">Ready, hero?</h2>
+        <p class="bubble cta-bubble">Your first mission is one click away.</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'add' %}" class="btn btn-lg btn-red">💥 Let's go!</a>
+        {% else %}
+        <a href="{% url 'register' %}" class="btn btn-lg btn-red">💥 Create your account</a>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'landing.js' %}"></script>
+{% endblock %}

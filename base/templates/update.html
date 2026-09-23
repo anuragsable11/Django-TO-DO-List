@@ -1,16 +1,28 @@
 {% extends "main.html" %}
- {% block content %}
-   <center>
-    <div class="add">
-    <h2>Update your ToDo List</h2>
-    <form action='' method="POST">
-      {% csrf_token %}
-      <label for=''>Title:</label>
-        <input type='text' name='title' value="{{data.title}}"></br>
-      <label for=''>Description:</label>
-        <input type='text' name='desc' value="{{data.desc}}"/></br>  
-      <button>Submit</button> 
-      </div> 
-   </center>
 
- {% endblock  %}
+{% block title %}Edit task{% endblock %}
+
+{% block content %}
+
+<section class="form-wrap">
+    <form method="POST" class="panel form-panel">
+        {% csrf_token %}
+        <h1 class="form-title">Plot Twist!</h1>
+        <p class="page-sub">Change the details of this task.</p>
+
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" maxlength="30" required autofocus
+               value="{{ data.title }}">
+
+        <label for="desc">Description</label>
+        <input id="desc" type="text" name="desc" maxlength="30"
+               value="{{ data.desc }}">
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-yellow">📝 Save changes</button>
+            <a href="{% url 'home' %}" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+</section>
+
+{% endblock %}
