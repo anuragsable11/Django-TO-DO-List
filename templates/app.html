@@ -1,0 +1,68 @@
+{% extends "main.html" %}
+
+{% comment %}Layout for the signed-in task pages: a "daybook" rail (date, lists, progress, Stripes) + content.{% endcomment %}
+
+{% block content %}
+{% with current=request.resolver_match.url_name %}
+<div class="app-shell">
+    <aside class="app-rail">
+        <div class="rail-date">
+            <span class="rail-day" data-today="day">{% now "d" %}</span>
+            <span class="rail-date-meta">
+                <span class="rail-month" data-today="month">{% now "M" %}</span>
+                <span data-today="weekday">{% now "l" %}</span>
+            </span>
+        </div>
+
+        <a href="{% url 'add' %}" class="btn btn-ink rail-new" data-shortcut="new-task" aria-keyshortcuts="N">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            New task
+            <kbd class="kbd" aria-hidden="true">N</kbd>
+        </a>
+
+        <nav class="rail-nav" aria-label="Task lists">
+            <a href="{% url 'home' %}" class="rail-link{% if current == 'home' or current == 'add' or current == 'update' %} is-active{% endif %}"{% if current == 'home' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>
+                <span>Tasks</span>
+                <span class="rail-count">{{ task_counts.open }}</span>
+            </a>
+            <a href="{% url 'complete' %}" class="rail-link{% if current == 'complete' %} is-active{% endif %}"{% if current == 'complete' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+                <span>Completed</span>
+                <span class="rail-count">{{ task_counts.done }}</span>
+            </a>
+            <a href="{% url 'trash' %}" class="rail-link{% if current == 'trash' %} is-active{% endif %}"{% if current == 'trash' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                <span>Trash</span>
+                <span class="rail-count">{{ task_counts.trash }}</span>
+            </a>
+        </nav>
+
+        <div class="rail-card rail-progress">
+            <div class="rail-progress-head">
+                <span class="label">Progress</span>
+                <span class="rail-progress-value">{{ task_counts.progress }}<small>%</small></span>
+            </div>
+            <div class="meter" role="progressbar" aria-label="Tasks completed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ task_counts.progress }}">
+                <span style="width: {{ task_counts.progress }}%"></span>
+            </div>
+            <p class="rail-note">{{ task_counts.done }} of {{ task_counts.done|add:task_counts.open }} task{{ task_counts.done|add:task_counts.open|pluralize }} done</p>
+        </div>
+
+        <div class="rail-card rail-stripes">
+            <span class="avatar-stripes" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+            <div>
+                <p class="rail-stripes-name">Stripes <span class="label">says</span></p>
+                <p class="rail-note">
+                    {% if task_counts.oldest %}“{{ task_counts.oldest.title }}” has waited the longest. Maybe today?{% elif task_counts.done %}All clear. Enjoy the calm, you earned it.{% else %}Add a task and I'll keep an eye on it for you.{% endif %}
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    <div class="app-main">
+        {% block app_content %}{% endblock %}
+    </div>
+</div>
+{% endwith %}
+{% endblock %}

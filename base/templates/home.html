@@ -1,59 +1,79 @@
-{% extends "main.html" %}
+{% extends "app.html" %}
 
 {% block title %}Tasks{% endblock %}
 
-{% block content %}
+{% block app_content %}
 
-<section class="page-head">
+<header class="masthead">
     <div>
-        <h1 class="page-title">Your Mission List</h1>
-        <p class="page-sub">Every hero needs a plan. Here's yours!</p>
+        <p class="label">Your list &middot; {% if data %}{{ data|length }} open{% else %}all clear{% endif %}</p>
+        <h1 class="masthead-title">Tasks</h1>
     </div>
-    <div class="burst burst-yellow" aria-label="{{ data|length }} open tasks">
-        <strong>{{ data|length }}</strong>
-        <span>task{{ data|length|pluralize }}</span>
+    {% if data %}
+    <div class="masthead-actions">
+        <form method="POST" action="{% url 'complete_all' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-sm" data-confirm="Mark every task as done?">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+                Complete all
+            </button>
+        </form>
+        <form method="POST" action="{% url 'delete_all' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-danger-quiet btn-sm" data-confirm="Move every task to the trash?">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Clear all
+            </button>
+        </form>
     </div>
-</section>
+    {% endif %}
+</header>
+
+<form method="POST" action="{% url 'add' %}" class="quick-add">
+    {% csrf_token %}
+    <span class="quick-add-dot" aria-hidden="true"></span>
+    <input id="quick-add-title" class="quick-add-title" type="text" name="title" maxlength="30" required
+           placeholder="Write a task…" aria-label="Task title" aria-keyshortcuts="N"{% if not data %} autofocus{% endif %}>
+    <input class="quick-add-desc" type="text" name="desc" maxlength="30"
+           placeholder="Add a note" aria-label="Note (optional)">
+    <kbd class="kbd quick-add-kbd" aria-hidden="true">N</kbd>
+    <button type="submit" class="btn btn-ink btn-sm">Add</button>
+</form>
 
 {% if data %}
-<div class="panels">
+<ol class="ledger">
     {% for i in data %}
-    <article class="panel">
-        <span class="panel-num">#{{ forloop.counter }}</span>
-        <h2 class="panel-title">{{ i.title }}</h2>
-        <p class="bubble">{{ i.desc|default:"No details. Pure mystery!" }}</p>
-        <div class="panel-actions">
-            <form method="POST" action="{% url 'hcomplete' i.id %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-green">✔ Done</button>
-            </form>
-            <a href="{% url 'update' i.id %}" class="btn btn-sm btn-yellow">📝 Edit</a>
+    <li class="task">
+        <span class="task-num" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+        <form method="POST" action="{% url 'hcomplete' i.id %}" class="inline-form" data-complete>
+            {% csrf_token %}
+            <button type="submit" class="check" title="Mark as done" aria-label="Mark “{{ i.title }}” as done">
+                <svg class="check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5 10 16.5 18 8"/></svg>
+            </button>
+        </form>
+        <div class="task-body">
+            <p class="task-title"><span>{{ i.title }}</span></p>
+            {% if i.desc %}<p class="task-desc">{{ i.desc }}</p>{% endif %}
+        </div>
+        <div class="task-actions task-actions-hover">
+            <a href="{% url 'update' i.id %}" class="icon-btn" title="Edit" aria-label="Edit “{{ i.title }}”">
+                <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+            </a>
             <form method="POST" action="{% url 'delete' i.id %}" class="inline-form">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-red">🗑 Trash</button>
+                <button type="submit" class="icon-btn icon-btn-danger" title="Move to trash" aria-label="Move “{{ i.title }}” to trash">
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                </button>
             </form>
         </div>
-    </article>
+    </li>
     {% endfor %}
-</div>
-
-<div class="bulk-actions">
-    <a href="{% url 'add' %}" class="btn btn-blue">➕ New task</a>
-    <form method="POST" action="{% url 'complete_all' %}" class="inline-form">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-green"
-                data-confirm="Mark every task as done?">💥 Complete all</button>
-    </form>
-    <form method="POST" action="{% url 'delete_all' %}" class="inline-form">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-red"
-                data-confirm="Move every task to the trash?">🗑 Trash all</button>
-    </form>
-</div>
+</ol>
 {% else %}
 <div class="empty">
-    <p class="bubble bubble-big">All clear, hero! No tasks on the board.</p>
-    <a href="{% url 'add' %}" class="btn btn-blue">➕ Add your first task</a>
+    <span class="empty-face" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+    <p class="empty-title">Nothing on your list. <em>Bliss.</em></p>
+    <p class="empty-text">Write a task above and press Enter. Stripes will keep an eye on it.</p>
 </div>
 {% endif %}
 

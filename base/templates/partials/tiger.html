@@ -1,0 +1,125 @@
+{% comment %}Stripes the tiger, drawn in SVG. Pass pose="pose-wave", "pose-point" or "pose-cheer" to start in a pose.{% endcomment %}
+<svg class="tiger{% if pose %} {{ pose }}{% endif %}" viewBox="0 0 400 560" aria-hidden="true" focusable="false">
+    <ellipse class="t-shadow" cx="200" cy="528" rx="118" ry="13"/>
+
+    <g class="t-rig">
+        <g class="t-breathe">
+            <!-- Tail -->
+            <g class="t-tail">
+                <path class="t-limb-ink" d="M262 440 C330 456 364 402 342 348 C330 318 346 292 370 294"/>
+                <path class="t-limb-fur t-butt" d="M262 440 C330 456 364 402 342 348 C330 318 346 292 370 294"/>
+                <path class="t-limb-stripes" pathLength="100" stroke-dasharray="0 22 5 13 5 13 5 13 5 9 100" d="M262 440 C330 456 364 402 342 348 C330 318 346 292 370 294"/>
+            </g>
+
+            <!-- Cape -->
+            <g class="t-cape">
+                <path class="t-cape-fill" d="M146 258 C118 330 96 420 80 486 Q110 472 140 488 Q170 472 200 488 Q230 472 260 488 Q290 472 320 486 C304 420 282 330 254 258 Z"/>
+                <path class="t-fold" d="M128 340 Q114 410 108 474 M272 340 Q286 410 292 474"/>
+            </g>
+
+            <!-- Legs + feet -->
+            <rect class="t-fur" x="142" y="396" width="46" height="104" rx="20"/>
+            <rect class="t-fur" x="212" y="396" width="46" height="104" rx="20"/>
+            <path class="t-stripe" d="M142 452 Q160 452 170 460 Q156 462 142 464 Z M258 452 Q240 452 230 460 Q244 462 258 464 Z"/>
+            <ellipse class="t-paw" cx="160" cy="504" rx="36" ry="19"/>
+            <ellipse class="t-paw" cx="240" cy="504" rx="36" ry="19"/>
+            <path class="t-line" d="M150 508 v10 M166 508 v10 M234 508 v10 M250 508 v10"/>
+
+            <!-- Body -->
+            <path class="t-fur" d="M146 252 C120 290 106 340 110 386 C114 428 150 442 200 442 C250 442 286 428 290 386 C294 340 280 290 254 252 Z"/>
+            <path class="t-stripe" d="M116 316 Q138 318 152 330 Q134 328 114 330 Z M110 352 Q134 354 150 366 Q132 364 109 366 Z M113 392 Q132 393 144 402 Q128 402 116 405 Z
+                                      M284 316 Q262 318 248 330 Q266 328 286 330 Z M290 352 Q266 354 250 366 Q268 364 291 366 Z M287 392 Q268 393 256 402 Q272 402 284 405 Z"/>
+            <ellipse class="t-belly" cx="200" cy="380" rx="54" ry="56"/>
+            <g class="t-badge">
+                <circle cx="200" cy="306" r="24"/>
+                <path d="M188 306 L197 316 L213 294"/>
+            </g>
+
+            <!-- Head -->
+            <g class="t-head">
+                <path class="t-fur" d="M182 70 C180 50 192 36 210 34 C202 44 204 52 210 58 C216 48 228 46 236 48 C226 54 222 62 222 72 Z"/>
+                <g class="t-ear t-ear-l">
+                    <circle class="t-fur" cx="116" cy="90" r="34"/>
+                    <circle class="t-ear-in" cx="118" cy="94" r="19"/>
+                </g>
+                <g class="t-ear t-ear-r">
+                    <circle class="t-fur" cx="284" cy="90" r="34"/>
+                    <circle class="t-ear-in" cx="282" cy="94" r="19"/>
+                </g>
+                <path class="t-fur" d="M200 62 C262 62 305 100 310 148 L340 164 L313 178 L337 198 L305 208 C290 250 250 274 200 274 C150 274 110 250 95 208 L63 198 L87 178 L60 164 L90 148 C95 100 138 62 200 62 Z"/>
+                <path class="t-stripe" d="M186 63 Q195 84 200 104 Q205 84 214 63 Z
+                                          M166 67 Q168 78 172 88 Q178 76 178 64 Z M234 67 Q232 78 228 88 Q222 76 222 64 Z
+                                          M92 128 Q112 130 126 140 Q108 141 90 140 Z M308 128 Q288 130 274 140 Q292 141 310 140 Z
+                                          M97 100 Q114 106 124 116 Q108 114 95 112 Z M303 100 Q286 106 276 116 Q292 114 305 112 Z"/>
+                <path class="t-muzzle" d="M200 180 C232 168 270 188 264 224 C260 254 232 266 200 266 C168 266 140 254 136 224 C130 188 168 168 200 180 Z"/>
+                <ellipse class="t-blush" cx="126" cy="196" rx="15" ry="9"/>
+                <ellipse class="t-blush" cx="274" cy="196" rx="15" ry="9"/>
+
+                <g class="t-eye t-eye-l">
+                    <ellipse class="t-eye-white" cx="166" cy="144" rx="25" ry="29"/>
+                    <g class="t-pupil">
+                        <circle class="t-pupil-dot" cx="166" cy="146" r="13"/>
+                        <circle class="t-glint" cx="161" cy="140" r="4.5"/>
+                    </g>
+                </g>
+                <g class="t-eye t-eye-r">
+                    <ellipse class="t-eye-white" cx="234" cy="144" rx="25" ry="29"/>
+                    <g class="t-pupil">
+                        <circle class="t-pupil-dot" cx="234" cy="146" r="13"/>
+                        <circle class="t-glint" cx="229" cy="140" r="4.5"/>
+                    </g>
+                </g>
+                <path class="t-happy-eyes" d="M144 152 Q166 124 188 152 M212 152 Q234 124 256 152"/>
+                <g class="t-brows">
+                    <path class="t-brow" d="M148 103 Q165 91 182 97"/>
+                    <path class="t-brow" d="M218 97 Q235 91 252 103"/>
+                </g>
+
+                <g class="t-mouth-open">
+                    <path class="t-mouth-in" d="M177 210 Q200 216 223 210 Q222 248 200 250 Q178 248 177 210 Z"/>
+                    <path class="t-tongue" d="M185 239 Q200 226 215 239 Q209 248 200 248 Q191 248 185 239 Z"/>
+                    <path class="t-fang" d="M183 212 L192 213 L187 222 Z M217 212 L208 213 L213 222 Z"/>
+                </g>
+                <path class="t-mouth-closed" d="M180 209 Q190 222 200 212 Q210 222 220 209"/>
+                <path class="t-line" d="M200 202 V212"/>
+                <path class="t-nose" d="M183 184 Q200 176 217 184 Q215 197 200 205 Q185 197 183 184 Z"/>
+                <ellipse class="t-nose-shine" cx="194" cy="185" rx="5" ry="2.6"/>
+
+                <g class="t-whiskers">
+                    <path d="M144 214 L72 202 M144 226 L70 230 M148 238 L80 258 M256 214 L328 202 M256 226 L330 230 M252 238 L320 258"/>
+                    <circle cx="166" cy="218" r="2.4"/><circle cx="160" cy="228" r="2.4"/><circle cx="172" cy="230" r="2.4"/>
+                    <circle cx="234" cy="218" r="2.4"/><circle cx="240" cy="228" r="2.4"/><circle cx="228" cy="230" r="2.4"/>
+                </g>
+            </g>
+
+            <!-- Arm holding the clipboard (viewer's left) -->
+            <g class="t-arm t-arm-l">
+                <g class="t-clipboard">
+                    <rect class="t-board" x="70" y="366" width="64" height="82" rx="7"/>
+                    <rect class="t-paper" x="79" y="378" width="46" height="60" rx="3"/>
+                    <rect class="t-clip" x="92" y="360" width="20" height="13" rx="4"/>
+                    <path class="t-ticklines" d="M97 394 h22 M97 410 h22 M97 426 h22"/>
+                    <rect class="t-tickbox" x="85" y="388" width="9" height="9" rx="2"/>
+                    <rect class="t-tickbox" x="85" y="404" width="9" height="9" rx="2"/>
+                    <rect class="t-tickbox" x="85" y="420" width="9" height="9" rx="2"/>
+                    <path class="t-ticks" d="M85 392 l4 4 l7 -9 M85 408 l4 4 l7 -9 M85 424 l4 4 l7 -9"/>
+                </g>
+                <path class="t-limb-ink" d="M146 298 Q120 338 128 384"/>
+                <circle class="t-joint" cx="146" cy="298" r="16"/>
+                <path class="t-limb-fur" d="M146 298 Q120 338 128 384"/>
+                <path class="t-limb-stripes" pathLength="100" stroke-dasharray="0 32 7 20 7 200" d="M146 298 Q120 338 128 384"/>
+                <circle class="t-paw" cx="128" cy="390" r="17"/>
+            </g>
+
+            <!-- Gesture arm: waves, points, cheers (viewer's right) -->
+            <g class="t-arm t-arm-r">
+                <path class="t-limb-ink" d="M254 298 Q280 338 272 384"/>
+                <circle class="t-joint" cx="254" cy="298" r="16"/>
+                <path class="t-limb-fur" d="M254 298 Q280 338 272 384"/>
+                <path class="t-limb-stripes" pathLength="100" stroke-dasharray="0 32 7 20 7 200" d="M254 298 Q280 338 272 384"/>
+                <rect class="t-paw t-finger" x="266" y="396" width="13" height="27" rx="6.5"/>
+                <circle class="t-paw" cx="272" cy="390" r="17"/>
+            </g>
+        </g>
+    </g>
+</svg>

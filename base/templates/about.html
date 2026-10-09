@@ -4,45 +4,62 @@
 
 {% block content %}
 
-<section class="page-head">
-    <div>
-        <h1 class="page-title">About This To-Do</h1>
-        <p class="page-sub">The origin story.</p>
+<section class="about-hero">
+    <p class="label">About</p>
+    <h1 class="about-title">A calmer way to <em>get things done.</em></h1>
+    <p class="about-lead">
+        Most task apps try to do everything. This one keeps to the essentials: write it down,
+        check it off, move on. Nothing gets lost, and nothing gets in your way.
+    </p>
+</section>
+
+<section class="principles">
+    <article class="principle">
+        <span class="label">01</span>
+        <h2>Focus</h2>
+        <p>One clean list, a quick way to add to it, and a single click to finish. No projects, tags or settings to manage.</p>
+    </article>
+    <article class="principle">
+        <span class="label">02</span>
+        <h2>Forgiveness</h2>
+        <p>Completed tasks are kept as a record, and deleted ones wait in the trash until you decide. Mistakes are always undoable.</p>
+    </article>
+    <article class="principle">
+        <span class="label">03</span>
+        <h2>Privacy</h2>
+        <p>Every list belongs to its own account. Only you can see, change or delete your tasks.</p>
+    </article>
+</section>
+
+<section class="about-stack">
+    <div class="about-stripes">
+        <span class="avatar-stripes avatar-lg" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+        <p><strong>And Stripes.</strong> A small assistant who reads your list and reminds you what's still waiting.</p>
     </div>
-    <div class="burst burst-pink" aria-hidden="true">
-        <strong>POW!</strong>
+    <div>
+        <p class="label">Built with</p>
+        <ul class="chips">
+            <li>Python</li>
+            <li>Django</li>
+            <li>HTML</li>
+            <li>CSS</li>
+            <li>JavaScript</li>
+        </ul>
     </div>
 </section>
 
-<div class="about-grid">
-    <div class="comic-box">
-        <h2>Hey there! 👋</h2>
-        <p>Welcome to your <strong>super cool To-Do website</strong>. It keeps your day in order so you can get on with saving it.</p>
-    </div>
-
-    <div class="comic-box">
-        <h2>What it does</h2>
-        <ul class="feature-list">
-            <li>➕ Add tasks</li>
-            <li>📝 Update tasks</li>
-            <li>✅ Mark tasks as complete</li>
-            <li>🗑 Trash and recover tasks</li>
-        </ul>
-    </div>
-
-    <div class="comic-box">
-        <h2>Built with</h2>
-        <p>Python 🐍 + Django ⚡ + HTML/CSS 🎨</p>
-    </div>
-
-    <div class="comic-box highlight">
-        <h2>The moral</h2>
-        <p>💡 Stay organized, stay productive, and finish your tasks like a HERO! 🦸</p>
-    </div>
-</div>
-
-<div class="bulk-actions">
-    <a href="{% url 'add' %}" class="btn btn-blue">➕ Start a task</a>
+<div class="about-cta">
+    {% if user.is_authenticated %}
+    <a href="{% url 'home' %}" class="btn btn-ink btn-lg">
+        Go to my tasks
+        <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+    </a>
+    {% else %}
+    <a href="{% url 'register' %}" class="btn btn-ink btn-lg">
+        Start for free
+        <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+    </a>
+    {% endif %}
 </div>
 
 {% endblock %}

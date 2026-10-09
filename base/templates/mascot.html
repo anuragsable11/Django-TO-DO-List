@@ -1,0 +1,63 @@
+<!-- Stripes the tiger: a rule-based assistant that reminds people about their tasks. Driven by mascot.js -->
+<section class="section sidekick" id="sidekick"
+         data-url-add="{% url 'add' %}"
+         data-url-home="{% url 'home' %}"
+         data-url-complete="{% url 'complete' %}"
+         data-url-trash="{% url 'trash' %}"
+         data-url-register="{% url 'register' %}"
+         data-url-login="{% url 'login' %}">
+
+    <div class="sk-stage">
+        <div class="sk-stage-bg" aria-hidden="true"></div>
+        <span class="sk-spark sk-spark-1" aria-hidden="true">✦</span>
+        <span class="sk-spark sk-spark-2" aria-hidden="true">✦</span>
+        <span class="sk-spark sk-spark-3" aria-hidden="true">✦</span>
+
+        <button type="button" class="sk-tiger" data-stripes-3d="sidekick" aria-label="Click Stripes for another reminder">
+            {% include "partials/tiger.html" %}
+        </button>
+    </div>
+
+    <div class="sk-talk">
+        <div class="sk-intro">
+            <p class="label">Your task assistant</p>
+            <h2 class="section-title">A helper with <em>stripes.</em></h2>
+            <p class="section-text">Stripes reads your list and reminds you what's still waiting, so you don't have to keep it all in your head. Click Stripes any time for another nudge.</p>
+        </div>
+
+        <div class="sk-bubble">
+            <p class="sk-bubble-head">
+                <span class="avatar-stripes avatar-sm" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+                <strong>Stripes</strong>
+                <span class="label">Task assistant</span>
+            </p>
+            <!-- Typed out on screen; screen readers get the whole line at once from .sk-live -->
+            <p class="sk-text">{% if user.is_authenticated %}Hi {{ user.username }}! I'm Stripes. I'll help you remember what's left on your list.{% else %}Hi! I'm Stripes, your task assistant. I'll help you remember what's left on your list.{% endif %}</p>
+            <p class="sk-live visually-hidden" aria-live="polite"></p>
+            <div class="sk-controls" hidden>
+                <div class="sk-actions">
+                    <a class="btn btn-outline btn-sm sk-link" hidden></a>
+                    <form method="POST" class="inline-form sk-done" hidden>
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'landing' %}#sidekick">
+                        <button type="submit" class="btn btn-ink btn-sm">
+                            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                            Mark as done
+                        </button>
+                    </form>
+                </div>
+                <div class="sk-nav">
+                    <button type="button" class="icon-btn sk-prev" aria-label="Previous message">
+                        <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+                    </button>
+                    <span class="sk-count" aria-hidden="true"></span>
+                    <button type="button" class="icon-btn sk-next" aria-label="Next message">
+                        <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ mascot|json_script:"mascot-data" }}
+</section>

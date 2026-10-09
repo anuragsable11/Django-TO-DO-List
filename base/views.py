@@ -3,17 +3,34 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render,redirect,get_object_or_404
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from .models import TaskModel,TrashModel,CompleteModel
 
 # Create your views here.
 def landing(request):
-    context={}
+    context={'mascot':{'user':''}}
     if request.user.is_authenticated:
+        open_tasks=TaskModel.objects.filter(user=request.user).order_by('id')
+        last_done=CompleteModel.objects.filter(user=request.user).order_by('-id').first()
         context={
-            'open_count':TaskModel.objects.filter(user=request.user).count(),
+            'open_count':open_tasks.count(),
             'done_count':CompleteModel.objects.filter(user=request.user).count(),
             'trash_count':TrashModel.objects.filter(user=request.user).count()
+        }
+        # What Stripes, the landing-page mascot, reminds the user about.
+        # Oldest tasks first: those are the easiest to forget.
+        context['mascot']={
+            'user':request.user.username,
+            'open':context['open_count'],
+            'done':context['done_count'],
+            'trash':context['trash_count'],
+            'last_done':last_done.title if last_done else '',
+            'tasks':[
+                {'title':t.title,'desc':t.desc,'done_url':reverse('hcomplete',args=[t.id])}
+                for t in open_tasks[:5]
+            ]
         }
     return render(request,'landing.html',context)
 
@@ -113,6 +130,10 @@ def hcomplete(request,pk):
     )
 
     complete_data.delete()
+    # Stripes marks tasks done from the landing page and sends people back there
+    next_url=request.POST.get('next')
+    if next_url and url_has_allowed_host_and_scheme(next_url,allowed_hosts={request.get_host()},require_https=request.is_secure()):
+        return redirect(next_url)
     return redirect('home')
 
 @login_required

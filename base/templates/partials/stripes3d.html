@@ -1,0 +1,11 @@
+{% load static %}
+{# Loads the 3D Stripes (three.js r170, vendored under static/vendor/three). Any element with data-stripes-3d gets a WebGL tiger over its SVG one. #}
+<script type="importmap">
+{
+    "imports": {
+        "three": "{% static 'vendor/three/three.module.min.js' %}",
+        "three/addons/": "{% static 'vendor/three/addons/' %}"
+    }
+}
+</script>
+<script type="module" src="{% static 'stripes3d.js' %}"></script>

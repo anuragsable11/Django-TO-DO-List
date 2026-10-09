@@ -1,7 +1,7 @@
 {% extends "main.html" %}
 {% load static %}
 
-{% block title %}Welcome{% endblock %}
+{% block title %}{% if user.is_authenticated %}Home{% else %}A calm to-do list{% endif %}{% endblock %}
 
 {% block main_class %}landing{% endblock %}
 
@@ -9,110 +9,193 @@
 
 <!-- Hero -->
 <section class="hero">
-    <div class="hero-rays" aria-hidden="true"></div>
-    <span class="sfx sfx-pow" aria-hidden="true">POW!</span>
-    <span class="sfx sfx-zap" aria-hidden="true">ZAP!</span>
-    <span class="sfx sfx-bam" aria-hidden="true">BAM!</span>
+    <div class="container hero-inner">
+        <a class="hero-badge hero-fade" style="--d: 0s" href="#sidekick">
+            <span class="hero-badge-tag">New</span>
+            Meet Stripes, your task assistant
+            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </a>
 
-    <div class="hero-inner">
-        <div class="hero-copy">
-            <p class="hero-kicker hero-fade" style="--d: 0s">Issue #1 &middot; Your daily adventure</p>
-            <h1 class="hero-title">
-                <span class="pop-word" style="--i: 0">Get</span>
-                <span class="pop-word" style="--i: 1">stuff</span>
-                <span class="pop-word hero-title-hit" style="--i: 2">done!</span>
-            </h1>
-            <p class="bubble hero-bubble hero-fade" style="--d: 0.8s">
-                A to-do list with super powers. Add your tasks, knock them out
-                one by one, and celebrate every win.
-            </p>
-            <div class="hero-actions hero-fade" style="--d: 1s">
-                {% if user.is_authenticated %}
-                <a href="{% url 'add' %}" class="btn btn-lg btn-blue">➕ Add a task</a>
-                <a href="{% url 'home' %}" class="btn btn-lg btn-ghost">📋 See my tasks</a>
-                {% else %}
-                <a href="{% url 'register' %}" class="btn btn-lg btn-blue">🦸 Join free</a>
-                <a href="{% url 'login' %}" class="btn btn-lg btn-ghost">🔑 Log in</a>
-                {% endif %}
-            </div>
+        {% if user.is_authenticated %}
+        <h1 class="hero-title hero-fade" style="--d: 0.08s">Welcome back,<br><em>{{ user.username }}.</em></h1>
+        <p class="hero-text hero-fade" style="--d: 0.16s">
+            {% if open_count %}You have {{ open_count }} open task{{ open_count|pluralize }}. Pick up where you left off, or write down something new.{% else %}Your list is clear. Write down the next thing whenever you're ready.{% endif %}
+        </p>
+        <div class="hero-actions hero-fade" style="--d: 0.24s">
+            <a href="{% url 'home' %}" class="btn btn-ink btn-lg">
+                Open my tasks
+                <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+            </a>
+            <a href="{% url 'add' %}" class="btn btn-outline btn-lg" data-shortcut="new-task" aria-keyshortcuts="N">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+                New task
+                <kbd class="kbd" aria-hidden="true">N</kbd>
+            </a>
         </div>
+        {% else %}
+        <h1 class="hero-title hero-fade" style="--d: 0.08s">
+            Write it down.<br>Get it
+            <span class="scribble">done.<svg class="scribble-svg" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M58 22 C130 4 248 8 282 44 C306 70 266 104 170 110 C84 115 18 98 14 68 C10 40 70 18 150 14"/></svg></span>
+        </h1>
+        <p class="hero-text hero-fade" style="--d: 0.16s">
+            A calm, focused to-do list for everything on your mind. Capture tasks in a keystroke,
+            check them off with a satisfying click, and never lose a thing.
+        </p>
+        <div class="hero-actions hero-fade" style="--d: 0.24s">
+            <a href="{% url 'register' %}" class="btn btn-ink btn-lg">
+                Start for free
+                <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+            </a>
+            <a href="{% url 'login' %}" class="btn btn-outline btn-lg">Log in</a>
+        </div>
+        <p class="hero-meta label hero-fade" style="--d: 0.32s">Free &middot; Private &middot; No clutter</p>
+        {% endif %}
+    </div>
 
-        <!-- Looping "adding tasks" demo, driven by landing.js -->
-        <div class="demo hero-fade" style="--d: 0.5s" aria-hidden="true">
-            <div class="demo-panel">
-                <div class="demo-head">
-                    <span>Today's missions</span>
-                    <span class="demo-dots"><i></i><i></i><i></i></span>
-                </div>
-                <div class="demo-input">
-                    <span class="demo-field"><span id="demo-typing"></span><span class="caret"></span></span>
-                    <span class="demo-add" id="demo-add">+</span>
-                </div>
-                <ul class="demo-list" id="demo-list"></ul>
+    <!-- Product preview, animated by landing.js -->
+    <div class="container preview-wrap hero-fade" style="--d: 0.4s">
+        <div class="preview" aria-hidden="true">
+            <div class="preview-bar">
+                <span class="preview-dots"><i></i><i></i><i></i></span>
+                <span class="preview-url">to-do / tasks</span>
+                <span class="preview-dots preview-dots-ghost"><i></i><i></i><i></i></span>
             </div>
-            <div class="burst burst-red demo-burst" id="demo-burst">
-                <strong>ALL</strong>
-                <span>done!</span>
+            <div class="preview-body">
+                <div class="preview-rail">
+                    <div class="rail-date">
+                        <span class="rail-day" data-today="day">{% now "d" %}</span>
+                        <span class="rail-date-meta">
+                            <span class="rail-month" data-today="month">{% now "M" %}</span>
+                            <span data-today="weekday">{% now "l" %}</span>
+                        </span>
+                    </div>
+                    <span class="preview-nav is-active"><svg class="icon icon-sm"><use href="#i-list"></use></svg>Tasks<b>3</b></span>
+                    <span class="preview-nav"><svg class="icon icon-sm"><use href="#i-check-circle"></use></svg>Completed<b>12</b></span>
+                    <span class="preview-nav"><svg class="icon icon-sm"><use href="#i-trash"></use></svg>Trash<b>1</b></span>
+                    <div class="rail-card preview-progress">
+                        <div class="rail-progress-head">
+                            <span class="label">Progress</span>
+                            <span class="rail-progress-value">80<small>%</small></span>
+                        </div>
+                        <div class="meter"><span style="width: 80%"></span></div>
+                    </div>
+                </div>
+                <div class="preview-main">
+                    <p class="label">Your list &middot; today</p>
+                    <p class="preview-title">Tasks</p>
+                    <div class="demo-input">
+                        <span class="quick-add-dot"></span>
+                        <span class="demo-field"><span id="demo-typing"></span><span class="caret"></span></span>
+                        <span class="demo-add" id="demo-add">Add</span>
+                    </div>
+                    <ul class="demo-list" id="demo-list"></ul>
+                </div>
+            </div>
+            <div class="demo-done" id="demo-burst">
+                <span class="demo-done-icon"><svg class="icon icon-sm"><use href="#i-check"></use></svg></span>
+                All done for today
             </div>
         </div>
     </div>
 </section>
 
+{% include "mascot.html" %}
+
 {% if user.is_authenticated %}
-<!-- Live stats for the logged-in user -->
+<!-- Live numbers for the logged-in user -->
 <section class="section">
-    <div class="stats">
-        <a href="{% url 'home' %}" class="stat reveal" style="--i: 0">
-            <span class="burst burst-yellow"><strong data-count="{{ open_count }}">{{ open_count }}</strong></span>
-            <span class="stat-label">Missions waiting</span>
+    <p class="label section-kicker reveal">Your numbers</p>
+    <div class="numbers">
+        <a href="{% url 'home' %}" class="number reveal" style="--i: 0">
+            <span class="number-value" data-count="{{ open_count }}">{{ open_count }}</span>
+            <span class="number-label">Open tasks <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg></span>
         </a>
-        <a href="{% url 'complete' %}" class="stat reveal" style="--i: 1">
-            <span class="burst burst-green"><strong data-count="{{ done_count }}">{{ done_count }}</strong></span>
-            <span class="stat-label">Victories so far</span>
+        <a href="{% url 'complete' %}" class="number reveal" style="--i: 1">
+            <span class="number-value" data-count="{{ done_count }}">{{ done_count }}</span>
+            <span class="number-label">Completed <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg></span>
         </a>
-        <a href="{% url 'trash' %}" class="stat reveal" style="--i: 2">
-            <span class="burst burst-pink"><strong data-count="{{ trash_count }}">{{ trash_count }}</strong></span>
-            <span class="stat-label">In the trash</span>
+        <a href="{% url 'trash' %}" class="number reveal" style="--i: 2">
+            <span class="number-value" data-count="{{ trash_count }}">{{ trash_count }}</span>
+            <span class="number-label">In trash <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg></span>
         </a>
     </div>
 </section>
 {% endif %}
 
-<!-- How it works -->
+<!-- Features -->
 <section class="section">
-    <h2 class="section-title reveal">How it works</h2>
-    <div class="steps">
-        <article class="panel step reveal" style="--i: 0">
-            <span class="panel-num">#1</span>
-            <span class="step-icon">✍️</span>
-            <h3 class="panel-title">Add it</h3>
-            <p class="bubble">Jot down anything on your mind, big or small.</p>
+    <div class="section-head reveal">
+        <p class="label">Why it feels different</p>
+        <h2 class="section-title">Designed for <em>focus,</em> built for calm.</h2>
+    </div>
+
+    <div class="bento">
+        <article class="tile tile-wide reveal" style="--i: 0">
+            <h3>Capture in a <em>keystroke.</em></h3>
+            <p>Press N anywhere in your list and start typing. Enter saves it. That's the whole workflow.</p>
+            <div class="tile-visual mock-capture" aria-hidden="true">
+                <span class="quick-add-dot"></span>
+                <span class="mock-text">Book flights to Lisbon<span class="caret"></span></span>
+                <span class="mock-keys"><kbd class="kbd">N</kbd><kbd class="kbd">↵</kbd></span>
+            </div>
         </article>
-        <article class="panel step reveal" style="--i: 1">
-            <span class="panel-num">#2</span>
-            <span class="step-icon">💪</span>
-            <h3 class="panel-title">Crush it</h3>
-            <p class="bubble">Hit Done when it's finished. It feels great.</p>
+
+        <article class="tile reveal" style="--i: 1">
+            <h3>The joy of <em>done.</em></h3>
+            <p>Every finished task gets a satisfying check-off.</p>
+            <div class="tile-visual mock-check" aria-hidden="true">
+                <span class="mock-check-circle"><svg viewBox="0 0 24 24"><path d="M6 12.5 10 16.5 18 8"/></svg></span>
+                <span class="mock-check-text">Call the bank</span>
+            </div>
         </article>
-        <article class="panel step reveal" style="--i: 2">
-            <span class="panel-num">#3</span>
-            <span class="step-icon">♻️</span>
-            <h3 class="panel-title">Oops? Recover it</h3>
-            <p class="bubble">Trashed something by mistake? Rescue it anytime.</p>
+
+        <article class="tile tile-dark reveal" style="--i: 0">
+            <h3>Stripes keeps <em>watch.</em></h3>
+            <p>Your assistant reads your list and nudges you about what's waiting.</p>
+            <div class="tile-visual mock-stripes" aria-hidden="true">
+                <span class="avatar-stripes"><svg><use href="#stripes-face"></use></svg></span>
+                <p class="mock-say">“Pay rent” has waited the longest. Maybe today?</p>
+            </div>
+        </article>
+
+        <article class="tile reveal" style="--i: 1">
+            <h3>A safety <em>net.</em></h3>
+            <p>Deleted by mistake? It waits in the trash until you decide.</p>
+            <div class="tile-visual mock-restore" aria-hidden="true">
+                <span class="mock-row">
+                    <svg class="icon icon-sm"><use href="#i-trash"></use></svg>
+                    Old idea
+                    <b class="mock-pill"><svg class="icon icon-sm"><use href="#i-restore"></use></svg>Restore</b>
+                </span>
+            </div>
+        </article>
+
+        <article class="tile reveal" style="--i: 2">
+            <h3>Light, or <em>dark.</em></h3>
+            <p>Easy on the eyes, day or night. One click to switch.</p>
+            <div class="tile-visual mock-themes" aria-hidden="true">
+                <span class="mock-theme mock-theme-light"><i></i><b></b><b></b></span>
+                <span class="mock-theme mock-theme-dark"><i></i><b></b><b></b></span>
+            </div>
         </article>
     </div>
 </section>
 
-<!-- Final call to action -->
+<!-- Closing call to action -->
 <section class="section">
     <div class="cta reveal">
-        <div class="cta-rays" aria-hidden="true"></div>
-        <h2 class="section-title">Ready, hero?</h2>
-        <p class="bubble cta-bubble">Your first mission is one click away.</p>
         {% if user.is_authenticated %}
-        <a href="{% url 'add' %}" class="btn btn-lg btn-red">💥 Let's go!</a>
+        <h2 class="cta-title">Clear your head.<br><em>Add the next one.</em></h2>
+        <a href="{% url 'add' %}" class="btn btn-paper btn-lg">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+            Add a task
+        </a>
         {% else %}
-        <a href="{% url 'register' %}" class="btn btn-lg btn-red">💥 Create your account</a>
+        <h2 class="cta-title">Clear your head.<br><em>Start your list.</em></h2>
+        <a href="{% url 'register' %}" class="btn btn-paper btn-lg">
+            Start for free
+            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </a>
         {% endif %}
     </div>
 </section>
@@ -121,4 +204,6 @@
 
 {% block scripts %}
 <script src="{% static 'landing.js' %}"></script>
+<script src="{% static 'mascot.js' %}"></script>
+{% include "partials/stripes3d.html" %}
 {% endblock %}

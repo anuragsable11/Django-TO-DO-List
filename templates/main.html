@@ -4,21 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>document.documentElement.classList.add('js');</script>
-    <title>{% block title %}Tasks{% endblock %} | Comic To-Do</title>
-    <link rel="icon" href="{% static 'images/to-do-list.png' %}">
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+    <script>
+        // Runs before first paint: flag JS, and apply the saved (or system) light/dark theme so nothing flashes
+        (function () {
+            var root = document.documentElement;
+            var theme = null;
+            root.classList.add('js');
+            try { theme = localStorage.getItem('theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            root.dataset.theme = theme;
+        })();
+    </script>
+    <title>{% block title %}Tasks{% endblock %} | To-Do</title>
+    <link rel="icon" href="{% static 'images/logo.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'images/logo-180.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'style.css' %}">
+    <script src="{% static 'app.js' %}" defer></script>
 </head>
 <body>
+    {% include "icons.html" %}
     {% include "nav.html" %}
 
     {% if messages %}
     <div class="toasts" role="status">
         {% for message in messages %}
-        <p class="toast toast-{{ message.tags }}">{{ message }}</p>
+        <p class="toast toast-{{ message.tags }}">
+            <svg class="icon" aria-hidden="true"><use href="#{% if message.tags == 'error' %}i-alert{% elif message.tags == 'success' %}i-check-circle{% else %}i-info{% endif %}"></use></svg>
+            <span>{{ message }}</span>
+        </p>
         {% endfor %}
     </div>
     {% endif %}
@@ -27,12 +47,34 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer">
-        <p>Made with <span class="heart">❤️</span> by Anurag &nbsp;|&nbsp; To-Do Website 📝</p>
+    <footer class="site-footer">
+        <div class="container site-footer-inner">
+            <div class="footer-brand">
+                <a class="logo" href="{% url 'landing' %}">
+                    <svg class="logo-mark" aria-hidden="true"><use href="#logo-mark"></use></svg>
+                    <span class="logo-word">To-Do</span>
+                </a>
+                <p>A calm place for everything you need to do.</p>
+            </div>
+            <nav class="footer-links" aria-label="Footer">
+                <a href="{% url 'landing' %}">Home</a>
+                <a href="{% url 'about' %}">About</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'home' %}">My tasks</a>
+                {% else %}
+                <a href="{% url 'login' %}">Log in</a>
+                <a href="{% url 'register' %}">Sign up</a>
+                {% endif %}
+            </nav>
+        </div>
+        <div class="container footer-meta">
+            <span>&copy; {% now "Y" %} To-Do</span>
+            <span>Built by Anurag with Django</span>
+        </div>
     </footer>
 
     <script>
-        // Ask before running destructive links, e.g. <a data-confirm="Sure?">
+        // Ask before running destructive actions, e.g. <button data-confirm="Sure?">
         document.addEventListener('click', function (e) {
             var link = e.target.closest('[data-confirm]');
             if (link && !window.confirm(link.dataset.confirm)) {

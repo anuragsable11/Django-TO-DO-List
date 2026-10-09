@@ -57,12 +57,13 @@
     var burst = document.getElementById('demo-burst');
     if (!list) return;
 
-    var tasks = ['Save the city', 'Feed the cat', 'Finish homework'];
+    var tasks = ['Review project brief', 'Book team meeting', 'Pay electricity bill'];
 
     function addRow(text) {
         var row = document.createElement('li');
         row.className = 'demo-row';
-        row.innerHTML = '<span class="demo-check"></span><span class="demo-text"></span>';
+        row.innerHTML = '<span class="demo-num"></span><span class="demo-check"></span><span class="demo-text"></span>';
+        row.querySelector('.demo-num').textContent = String(list.children.length + 1).padStart(2, '0');
         row.querySelector('.demo-text').textContent = text;
         list.appendChild(row);
         return row;

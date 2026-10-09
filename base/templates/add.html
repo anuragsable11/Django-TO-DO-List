@@ -1,28 +1,36 @@
-{% extends "main.html" %}
+{% extends "app.html" %}
 
-{% block title %}Add task{% endblock %}
+{% block title %}New task{% endblock %}
 
-{% block content %}
+{% block app_content %}
 
-<section class="form-wrap">
-    <form method="POST" class="panel form-panel">
-        {% csrf_token %}
-        <h1 class="form-title">New Mission!</h1>
-        <p class="page-sub">What's the next thing you'll conquer?</p>
+<header class="masthead">
+    <div>
+        <p class="label">Write it down</p>
+        <h1 class="masthead-title">New <em>task</em></h1>
+    </div>
+</header>
 
+<form method="POST" class="form-card">
+    {% csrf_token %}
+    <div class="field">
         <label for="title">Title</label>
-        <input id="title" type="text" name="title" maxlength="30" required autofocus
-               placeholder="Save the city">
-
-        <label for="desc">Description</label>
-        <input id="desc" type="text" name="desc" maxlength="30"
-               placeholder="Before lunch, ideally">
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-green">💥 Add task</button>
-            <a href="{% url 'home' %}" class="btn btn-ghost">Cancel</a>
-        </div>
-    </form>
-</section>
+        <input id="title" class="input input-lg" type="text" name="title" maxlength="30" required autofocus
+               placeholder="e.g. Send the weekly report">
+    </div>
+    <div class="field">
+        <label for="desc">Note <span class="label-optional">Optional</span></label>
+        <input id="desc" class="input" type="text" name="desc" maxlength="30"
+               placeholder="e.g. Before 5 pm on Friday" aria-describedby="desc-help">
+        <p class="field-help" id="desc-help">Up to 30 characters.</p>
+    </div>
+    <div class="form-actions">
+        <a href="{% url 'home' %}" class="btn btn-quiet">Cancel</a>
+        <button type="submit" class="btn btn-ink">
+            Add task
+            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </button>
+    </div>
+</form>
 
 {% endblock %}

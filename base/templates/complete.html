@@ -1,53 +1,70 @@
-{% extends "main.html" %}
+{% extends "app.html" %}
 
 {% block title %}Completed{% endblock %}
 
-{% block content %}
+{% block app_content %}
 
-<section class="page-head">
+<header class="masthead">
     <div>
-        <h1 class="page-title">Victory Hall</h1>
-        <p class="page-sub">Tasks you've already KO'd.</p>
+        <p class="label">Done &middot; {{ data|length }} task{{ data|length|pluralize }}</p>
+        <h1 class="masthead-title">Completed</h1>
     </div>
-    <div class="burst burst-green" aria-label="{{ data|length }} completed tasks">
-        <strong>{{ data|length }}</strong>
-        <span>done!</span>
+    {% if data %}
+    <div class="masthead-actions">
+        <form method="POST" action="{% url 'restore_all' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-sm" data-confirm="Move every completed task back to your list?">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restore"></use></svg>
+                Restore all
+            </button>
+        </form>
+        <form method="POST" action="{% url 'clear_complete' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-danger-quiet btn-sm" data-confirm="Move every completed task to the trash?">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Move all to trash
+            </button>
+        </form>
     </div>
-</section>
+    {% endif %}
+</header>
 
 {% if data %}
-<div class="panels">
+<ol class="ledger">
     {% for i in data %}
-    <article class="panel panel-done">
-        <span class="stamp">KAPOW!</span>
-        <h2 class="panel-title">{{ i.title }}</h2>
-        <p class="bubble">{{ i.desc|default:"No details. Pure mystery!" }}</p>
-        <div class="panel-actions">
+    <li class="task is-done">
+        <span class="task-num" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+        <form method="POST" action="{% url 'restore' i.id %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="check is-checked" title="Mark as not done" aria-label="Mark “{{ i.title }}” as not done">
+                <svg class="check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5 10 16.5 18 8"/></svg>
+            </button>
+        </form>
+        <div class="task-body">
+            <p class="task-title"><span>{{ i.title }}</span></p>
+            {% if i.desc %}<p class="task-desc">{{ i.desc }}</p>{% endif %}
+        </div>
+        <div class="task-actions">
             <form method="POST" action="{% url 'restore' i.id %}" class="inline-form">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-blue">↩ Restore</button>
+                <button type="submit" class="btn btn-quiet btn-sm" aria-label="Restore “{{ i.title }}” to tasks">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restore"></use></svg>
+                    Restore
+                </button>
             </form>
         </div>
-    </article>
+    </li>
     {% endfor %}
-</div>
-
-<div class="bulk-actions">
-    <form method="POST" action="{% url 'restore_all' %}" class="inline-form">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-blue"
-                data-confirm="Move every completed task back to your list?">↩ Restore all</button>
-    </form>
-    <form method="POST" action="{% url 'clear_complete' %}" class="inline-form">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-red"
-                data-confirm="Move every completed task to the trash?">🗑 Trash all</button>
-    </form>
-</div>
+</ol>
 {% else %}
 <div class="empty">
-    <p class="bubble bubble-big">No victories yet. Go finish something!</p>
-    <a href="{% url 'home' %}" class="btn btn-blue">📋 Back to tasks</a>
+    <span class="empty-face" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+    <p class="empty-title">No wins yet. <em>Soon.</em></p>
+    <p class="empty-text">Tasks you check off will collect here, a quiet record of everything you've done.</p>
+    <a href="{% url 'home' %}" class="btn btn-outline btn-sm">
+        Go to tasks
+        <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+    </a>
 </div>
 {% endif %}
 

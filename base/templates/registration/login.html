@@ -2,34 +2,51 @@
 
 {% block title %}Log in{% endblock %}
 
+{% block main_class %}auth{% endblock %}
+
 {% block content %}
 
-<section class="form-wrap">
-    <form method="POST" class="panel form-panel auth-panel" novalidate>
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
+<div class="auth-split">
+    <section class="auth-panel">
+        <div class="auth-form">
+            <p class="label">Welcome back</p>
+            <h1 class="auth-title">Log in to <em>your list.</em></h1>
+            <p class="auth-subtitle">Good to see you again. Your tasks are right where you left them.</p>
 
-        <div class="burst burst-yellow auth-burst" aria-hidden="true"><strong>HEY!</strong></div>
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
 
-        <h1 class="form-title">Welcome back!</h1>
-        <p class="page-sub">Log in to see your missions.</p>
+                {% if form.non_field_errors %}
+                <div class="alert alert-error" role="alert">
+                    <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+                    <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+                {% endif %}
 
-        {% if form.non_field_errors %}
-        <div class="alert alert-error" role="alert">
-            {% for error in form.non_field_errors %}<p>💥 {{ error }}</p>{% endfor %}
+                {% include "registration/form_fields.html" %}
+
+                <button type="submit" class="btn btn-ink btn-lg btn-block">
+                    Log in
+                    <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </button>
+            </form>
+
+            <p class="auth-switch">New here? <a href="{% url 'register' %}">Create an account</a></p>
         </div>
-        {% endif %}
+    </section>
 
-        {% include "registration/form_fields.html" %}
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-blue">🚀 Log in</button>
+    <aside class="auth-art" aria-hidden="true">
+        <div class="auth-art-inner">
+            <p class="auth-quote">“Write it down, and let your mind <em>rest.</em>”</p>
+            <div class="auth-tiger" data-stripes-3d="wave">{% include "partials/tiger.html" with pose="pose-wave" %}</div>
+            <p class="label">Stripes &middot; your task assistant</p>
         </div>
+    </aside>
+</div>
 
-        <p class="auth-switch">
-            New here? <a href="{% url 'register' %}">Create an account</a>
-        </p>
-    </form>
-</section>
+{% endblock %}
 
+{% block scripts %}
+{% include "partials/stripes3d.html" %}
 {% endblock %}
