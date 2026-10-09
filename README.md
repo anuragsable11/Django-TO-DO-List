@@ -1,6 +1,6 @@
-📝 Django To-Do List Web App
+📝 Doneward
 
-A simple and user-friendly To-Do List web application built using Django, where users can manage their daily tasks efficiently.
+Doneward is a calm, focused to-do list built with Django: write tasks down, check them off, and let Stripes, its tiger assistant, remind you what is still waiting.
 
 🚀 Features
 ➕ Add new tasks

@@ -20,9 +20,9 @@ export const POSES = {
 export const LID_OPEN = -1.25;
 export const LID_CLOSED = 1.45;
 
-const SPHERE = new THREE.SphereGeometry(1, 48, 32);
+const SPHERE = new THREE.SphereGeometry(1, 64, 40);
 const SPHERE_LOW = new THREE.SphereGeometry(1, 16, 12);
-const LID_CAP = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2);
+const LID_CAP = new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2);
 
 const FUR = rgb(COLORS.fur);
 const CREAM = rgb(COLORS.cream);
@@ -51,12 +51,146 @@ function tube(points, radius, material, segments = 40) {
     return t;
 }
 
+// A tube whose radius follows profile(t) along its length (t = 0 at the root, 1 at the tip)
+function taperedTube(points, radius, material, profile = (t) => 1 - 0.85 * t, segments = 48) {
+    const curve = new THREE.CatmullRomCurve3(points.map((p) => (p.isVector3 ? p : new THREE.Vector3(...p))));
+    const radial = 10;
+    const geometry = new THREE.TubeGeometry(curve, segments, radius, radial, false);
+    const position = geometry.attributes.position;
+    const centre = new THREE.Vector3();
+    const v = new THREE.Vector3();
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        curve.getPointAt(t, centre);
+        const k = Math.max(profile(t), 0.02);
+        for (let j = 0; j <= radial; j++) {
+            const idx = i * (radial + 1) + j;
+            v.fromBufferAttribute(position, idx).sub(centre).multiplyScalar(k).add(centre);
+            position.setXYZ(idx, v.x, v.y, v.z);
+        }
+    }
+    geometry.computeVertexNormals();
+    const m = mesh(geometry, material);
+    m.castShadow = false;
+    return m;
+}
+
+// A shallow dome facing +z with planar UVs, for the painted iris
+function irisCap() {
+    const geometry = new THREE.SphereGeometry(1, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    geometry.rotateX(Math.PI / 2);
+    const position = geometry.attributes.position;
+    const uv = geometry.attributes.uv;
+    for (let i = 0; i < position.count; i++) uv.setXY(i, position.getX(i) * 0.5 + 0.5, position.getY(i) * 0.5 + 0.5);
+    return geometry;
+}
+
+function paintTexture(width, height, draw) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    draw(canvas.getContext('2d'), width, height);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+    return texture;
+}
+
+// Iris: pupil, a light collarette, amber fibres radiating out, and a dark limbal ring
+function irisTexture() {
+    return paintTexture(512, 512, (g, W) => {
+        const c = W / 2;
+        let seed = 7;
+        const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        const base = g.createRadialGradient(c, c, 0, c, c, c);
+        base.addColorStop(0, '#2a1405');
+        base.addColorStop(0.46, '#d68a34');
+        base.addColorStop(0.62, '#b0631d');
+        base.addColorStop(0.86, '#6e3810');
+        base.addColorStop(0.95, '#2b1406');
+        base.addColorStop(1, '#1d0d03');
+        g.fillStyle = base;
+        g.beginPath();
+        g.arc(c, c, c, 0, Math.PI * 2);
+        g.fill();
+        // fibres
+        for (let i = 0; i < 260; i++) {
+            const a = rand() * Math.PI * 2;
+            const r0 = c * (0.46 + rand() * 0.08);
+            const r1 = c * (0.78 + rand() * 0.16);
+            const light = rand() < 0.5;
+            g.strokeStyle = light ? `rgba(255, 196, 120, ${0.12 + rand() * 0.2})` : `rgba(60, 25, 5, ${0.12 + rand() * 0.22})`;
+            g.lineWidth = 1 + rand() * 2.2;
+            g.beginPath();
+            g.moveTo(c + Math.cos(a) * r0, c + Math.sin(a) * r0);
+            const bend = (rand() - 0.5) * 0.12;
+            g.quadraticCurveTo(c + Math.cos(a + bend) * (r0 + r1) / 2, c + Math.sin(a + bend) * (r0 + r1) / 2, c + Math.cos(a) * r1, c + Math.sin(a) * r1);
+            g.stroke();
+        }
+        // collarette around the pupil
+        g.strokeStyle = 'rgba(255, 205, 130, 0.55)';
+        g.lineWidth = 7;
+        g.beginPath();
+        g.arc(c, c, c * 0.5, 0, Math.PI * 2);
+        g.stroke();
+        // pupil
+        const pupil = g.createRadialGradient(c, c, c * 0.3, c, c, c * 0.45);
+        pupil.addColorStop(0, '#07080b');
+        pupil.addColorStop(0.85, '#0b0c10');
+        pupil.addColorStop(1, 'rgba(11, 12, 16, 0)');
+        g.fillStyle = pupil;
+        g.beginPath();
+        g.arc(c, c, c * 0.45, 0, Math.PI * 2);
+        g.fill();
+        // soft limbal darkening
+        const limbus = g.createRadialGradient(c, c, c * 0.8, c, c, c);
+        limbus.addColorStop(0, 'rgba(20, 8, 2, 0)');
+        limbus.addColorStop(1, 'rgba(20, 8, 2, 0.75)');
+        g.fillStyle = limbus;
+        g.beginPath();
+        g.arc(c, c, c, 0, Math.PI * 2);
+        g.fill();
+    });
+}
+
+// The clipboard sheet: a printed TO-DO list with three checkboxes and handwritten lines
+function sheetTexture() {
+    return paintTexture(256, 320, (g, W, H) => {
+        g.fillStyle = '#fffaf0';
+        g.fillRect(0, 0, W, H);
+        g.fillStyle = 'rgba(140, 170, 210, 0.35)';
+        for (let y = 52; y < H; y += 28) g.fillRect(12, y + 18, W - 24, 1.5);
+        g.fillStyle = '#c0391b';
+        g.fillRect(30, 0, 2, H);
+        g.fillStyle = '#23252c';
+        g.font = 'bold 30px Georgia, serif';
+        g.fillText('TO-DO', 70, 40);
+        let seed = 3;
+        const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        for (const y of [64, 149, 235]) {
+            g.strokeStyle = '#23252c';
+            g.lineWidth = 3;
+            g.strokeRect(36, y - 12, 24, 24);
+            g.strokeStyle = 'rgba(35, 40, 60, 0.85)';
+            g.lineWidth = 2.6;
+            g.beginPath();
+            g.moveTo(76, y + 4);
+            for (let x = 76; x < 76 + 120 + rand() * 40; x += 6) g.lineTo(x, y + 4 + Math.sin(x * 0.35 + y) * 3.5 + (rand() - 0.5) * 2);
+            g.stroke();
+        }
+    });
+}
+
 function makeMaterials() {
     return {
         ink: new THREE.MeshStandardMaterial({ color: COLORS.ink, roughness: 0.5 }),
         whisker: new THREE.MeshStandardMaterial({ color: COLORS.whisker, roughness: 0.4 }),
         eyeWhite: new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 }),
-        iris: new THREE.MeshPhysicalMaterial({ color: '#7a3f12', roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 }),
+        iris: new THREE.MeshPhysicalMaterial({ map: irisTexture(), roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.03 }),
+        cornea: new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.12, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0, depthWrite: false }),
+        pad: new THREE.MeshPhysicalMaterial({ color: '#f59bb0', roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.3 }),
+        sheet: new THREE.MeshStandardMaterial({ map: sheetTexture(), roughness: 0.92 }),
+        pen: new THREE.MeshPhysicalMaterial({ color: '#1f3b63', roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 }),
         pupil: new THREE.MeshPhysicalMaterial({ color: '#121419', roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.04 }),
         glint: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
         nose: new THREE.MeshPhysicalMaterial({ color: COLORS.pink, roughness: 0.28, clearcoat: 0.9, clearcoatRoughness: 0.12 }),
@@ -139,11 +273,11 @@ function paintHead() {
     // half-widths are in direction space: 0.05 is about 3 degrees, 0.025 units on this head
     const stripes = strokePainter(radial, [
         // forehead: thick at the hairline, tapering down toward the brows
-        { pts: [D(0, 0.86, 0.5), D(0, 0.56, 0.84)], w: [0.05, 0.018] },
-        { pts: [D(-0.18, 0.84, 0.5), D(-0.12, 0.58, 0.8)], w: [0.042, 0.016] },
-        { pts: [D(0.18, 0.84, 0.5), D(0.12, 0.58, 0.8)], w: [0.042, 0.016] },
-        { pts: [D(-0.36, 0.78, 0.46), D(-0.27, 0.6, 0.72)], w: [0.036, 0.015] },
-        { pts: [D(0.36, 0.78, 0.46), D(0.27, 0.6, 0.72)], w: [0.036, 0.015] },
+        { pts: [D(0, 0.88, 0.48), D(0, 0.56, 0.84)], w: [0.075, 0.03], soft: 0.035 },
+        { pts: [D(-0.2, 0.85, 0.48), D(-0.13, 0.58, 0.8)], w: [0.062, 0.026], soft: 0.035 },
+        { pts: [D(0.2, 0.85, 0.48), D(0.13, 0.58, 0.8)], w: [0.062, 0.026], soft: 0.035 },
+        { pts: [D(-0.4, 0.78, 0.46), D(-0.3, 0.6, 0.72)], w: [0.052, 0.024], soft: 0.035 },
+        { pts: [D(0.4, 0.78, 0.46), D(0.3, 0.6, 0.72)], w: [0.052, 0.024], soft: 0.035 },
         // cheeks: from the sides, curving onto the front of the ruff toward the muzzle
         { pts: [D(-0.95, 0.25, -0.1), D(-0.75, 0.2, 0.55), D(-0.55, 0.14, 0.83)], w: [0.085, 0.02] },
         { pts: [D(0.95, 0.25, -0.1), D(0.75, 0.2, 0.55), D(0.55, 0.14, 0.83)], w: [0.085, 0.02] },
@@ -155,8 +289,11 @@ function paintHead() {
         { pts: [D(0, 0.95, -0.15), D(0, 0.7, -0.7)], w: [0.07, 0.03] },
         { pts: [D(-0.22, 0.92, -0.2), D(-0.2, 0.7, -0.66)], w: [0.055, 0.025] },
         { pts: [D(0.22, 0.92, -0.2), D(0.2, 0.7, -0.66)], w: [0.055, 0.025] },
-        { pts: [D(-0.5, 0.35, -0.75), D(-0.15, 0.2, -0.95)], w: [0.06, 0.025] },
-        { pts: [D(0.5, 0.35, -0.75), D(0.15, 0.2, -0.95)], w: [0.06, 0.025] },
+        // down the back of the head, from the crown toward the nape
+        { pts: [D(-0.42, 0.75, -0.5), D(-0.5, 0.2, -0.85)], w: [0.06, 0.02], soft: 0.03 },
+        { pts: [D(0.42, 0.75, -0.5), D(0.5, 0.2, -0.85)], w: [0.06, 0.02], soft: 0.03 },
+        { pts: [D(-0.14, 0.62, -0.78), D(-0.16, 0.1, -0.98)], w: [0.055, 0.02], soft: 0.03 },
+        { pts: [D(0.14, 0.62, -0.78), D(0.16, 0.1, -0.98)], w: [0.055, 0.02], soft: 0.03 },
     ], 0.025);
 
     // masks sized to where the merged surface really is
@@ -222,8 +359,10 @@ function paintBody() {
 
     return (p) => {
         let c = FUR;
-        const facing = p.z / (Math.hypot(p.x, p.z) || 1);
-        const belly = smoothstep(0.62, 0.9, facing) * smoothstep(0.4, 0.52, p.y) * smoothstep(0.98, 0.86, p.y);
+        // an oval belly patch on the front, measured around the body (angle) and up it (height)
+        const angle = Math.atan2(p.x, p.z);
+        const oval = (angle / 0.78) ** 2 + ((p.y - 0.66) / 0.29) ** 2;
+        const belly = smoothstep(1.0, 0.7, oval) * smoothstep(0.1, 0.3, p.z);
         c = mix(c, CREAM, belly);
         const feet = smoothstep(0.22, 0.15, p.y);
         c = mix(c, CREAM, feet);
@@ -243,9 +382,6 @@ const ARM_BLOBS = [
 ];
 
 function paintArm() {
-    const creases = strokePainter(projections.world(), [-1, 1].map((s) => ({
-        pts: [[s * 0.028, -0.38, 0.1], [s * 0.028, -0.45, 0.095]], w: [0.011], soft: 0.01,
-    })));
     return (p) => {
         let c = FUR;
         const paw = smoothstep(-0.3, -0.36, p.y);
@@ -253,16 +389,34 @@ function paintArm() {
         const angle = Math.atan2(p.x, p.z);
         let band = 0;
         for (const yb of [-0.14, -0.25]) band = Math.max(band, smoothstep(0.045, 0.025, Math.abs(p.y - yb - 0.012 * Math.sin(angle * 2 + 1))));
-        c = mix(c, INK, band * (1 - paw));
-        return mix(c, INK, creases(p) * paw);
+        return mix(c, INK, band * (1 - paw));
     };
+}
+
+// Pink palm pad and three toe beans on the front of a paw, sitting on the sculpted surface
+function pawPads(material) {
+    const pads = new THREE.Group();
+    const z = new THREE.Vector3(0, 0, 1);
+    const place = (origin, dir, scale) => {
+        const d = new THREE.Vector3(...dir).normalize();
+        const at = surfacePoint(ARM_BLOBS, origin, dir).addScaledVector(d, -scale[2] * 0.35);
+        const pad = mesh(SPHERE, material, { pos: at.toArray(), scale });
+        pad.quaternion.setFromUnitVectors(z, d);
+        pad.castShadow = false;
+        pads.add(pad);
+    };
+    place([0, -0.41, 0.01], [0, -0.15, 1], [0.04, 0.033, 0.014]);
+    place([0, -0.46, 0.06], [-0.55, -0.55, 1], [0.017, 0.015, 0.008]);
+    place([0, -0.46, 0.06], [0, -0.7, 1], [0.018, 0.016, 0.008]);
+    place([0, -0.46, 0.06], [0.55, -0.55, 1], [0.017, 0.015, 0.008]);
+    return pads;
 }
 
 /* ---------- Assembly ---------- */
 
 export function buildTiger({ quality = 'high' } = {}) {
     const high = quality === 'high';
-    const fur = { shells: high ? 14 : 5 };
+    const fur = { shells: high ? 10 : 5 };
     const mat = makeMaterials();
     const parts = {};
     const tiger = new THREE.Group();    // whole character, feet on y = 0
@@ -272,7 +426,12 @@ export function buildTiger({ quality = 'high' } = {}) {
     parts.body = body;
 
     // Body: torso, neck, legs and feet in one sculpt
-    const bodyGeo = sculpt({ center: [0, 0.62, 0.02], size: 0.74, resolution: high ? 64 : 48, blobs: BODY_BLOBS, paint: paintBody(), scale: [1, 1, 0.9] });
+    // the head sits above the body; include it as an occluder so the top of the chest is shaded under the chin
+    const headOccluder = { p: [0, 1.52, 0.02], r: 0.5 };
+    const bodyGeo = sculpt({
+        center: [0, 0.62, 0.02], size: 0.74, resolution: high ? 72 : 52, blobs: BODY_BLOBS, paint: paintBody(), scale: [1, 1, 0.9],
+        ao: { strength: 0.5, reach: 0.14, occluders: [headOccluder] },
+    });
     body.add(furredMesh(bodyGeo, { ...fur, length: 0.034, density: 300 }));
 
     // Cape, hanging from behind the neck
@@ -315,12 +474,13 @@ export function buildTiger({ quality = 'high' } = {}) {
     });
 
     // Arms: sculpted, pivoting at the shoulder, hanging down and slightly forward
-    const armGeo = sculpt({ center: [0, -0.2, 0.02], size: 0.36, resolution: high ? 40 : 32, blobs: ARM_BLOBS, paint: paintArm() });
+    const armGeo = sculpt({ center: [0, -0.2, 0.02], size: 0.36, resolution: high ? 52 : 36, blobs: ARM_BLOBS, paint: paintArm(), ao: { strength: 0.35, reach: 0.06 } });
     parts.arms = {};
     for (const [key, side] of [['L', -1], ['R', 1]]) {
         const shoulder = new THREE.Group();
         shoulder.position.set(side * 0.36, 0.9, 0.1);
         shoulder.add(furredMesh(armGeo, { ...fur, length: 0.025, density: 340 }));
+        shoulder.add(pawPads(mat.pad));
         body.add(shoulder);
         parts.arms[key] = shoulder;
     }
@@ -336,17 +496,25 @@ export function buildTiger({ quality = 'high' } = {}) {
     clipboard.position.set(-0.02, -0.42, 0.12);
     clipboard.rotation.set(0.2, 0.15, 0.3);
     clipboard.add(mesh(new RoundedBoxGeometry(0.3, 0.38, 0.024, 4, 0.018), mat.wood, { pos: [-0.11, 0, 0] }));
-    clipboard.add(mesh(new THREE.BoxGeometry(0.24, 0.3, 0.005), mat.paper, { pos: [-0.11, -0.02, 0.0145] }));
+    clipboard.add(mesh(new THREE.BoxGeometry(0.24, 0.3, 0.005), [mat.paper, mat.paper, mat.paper, mat.paper, mat.sheet, mat.paper], { pos: [-0.11, -0.02, 0.0145] }));
     clipboard.add(mesh(new RoundedBoxGeometry(0.11, 0.05, 0.034, 3, 0.01), mat.metal, { pos: [-0.11, 0.18, 0.012] }));
     parts.ticks = [];
+    // tick rows line up with the checkboxes printed on the sheet
     [0.07, -0.01, -0.09].forEach((y) => {
-        clipboard.add(mesh(new THREE.BoxGeometry(0.032, 0.032, 0.006), mat.line, { pos: [-0.19, y, 0.018] }));
-        clipboard.add(mesh(new THREE.BoxGeometry(0.11, 0.011, 0.004), mat.line, { pos: [-0.08, y, 0.018] }));
-        const tick = tube([[-0.205, y + 0.002, 0.026], [-0.192, y - 0.012, 0.026], [-0.168, y + 0.02, 0.026]], 0.0065, mat.tick, 16);
+        const tick = tube([[-0.198, y + 0.002, 0.022], [-0.188, y - 0.01, 0.022], [-0.166, y + 0.02, 0.022]], 0.0055, mat.tick, 16);
         tick.visible = false;
         clipboard.add(tick);
         parts.ticks.push(tick);
     });
+    // a pen clipped along the right edge
+    const pen = new THREE.Group();
+    pen.position.set(0.05, -0.02, 0.022);
+    pen.rotation.z = 0.08;
+    pen.add(mesh(new THREE.CylinderGeometry(0.0095, 0.0095, 0.2, 24), mat.pen));
+    pen.add(mesh(new THREE.ConeGeometry(0.0095, 0.03, 24), mat.metal, { pos: [0, -0.115, 0], rot: [Math.PI, 0, 0] }));
+    pen.add(mesh(SPHERE_LOW, mat.pen, { pos: [0, 0.1, 0], scale: 0.0095 }));
+    pen.add(mesh(new RoundedBoxGeometry(0.006, 0.07, 0.004, 2, 0.002), mat.gold, { pos: [0, 0.06, 0.011] }));
+    clipboard.add(pen);
     parts.arms.L.add(clipboard);
 
     // Head: one sculpt with cheeks, muzzle, brow ridge, ears and tuft; pivots at the neck
@@ -354,22 +522,36 @@ export function buildTiger({ quality = 'high' } = {}) {
     head.position.set(0, 1.04, 0.02);
     body.add(head);
     parts.head = head;
-    const headGeo = sculpt({ center: [0, 0.5, 0.02], size: 0.8, resolution: high ? 72 : 52, blobs: HEAD_BLOBS, paint: paintHead(), scale: [1.04, 1, 0.95] });
+    const headGeo = sculpt({
+        center: [0, 0.5, 0.02], size: 0.8, resolution: high ? 80 : 56, blobs: HEAD_BLOBS, paint: paintHead(), scale: [1.04, 1, 0.95],
+        ao: { strength: 0.5, reach: 0.11 },
+    });
     head.add(furredMesh(headGeo, { ...fur, length: 0.03, density: 320 }));
 
     // Where the sculpted surface is along a direction from the head centre, pushed out by `lift`
     const onFace = (dir, lift = 0) => surfacePoint(HEAD_BLOBS, HEAD_C, dir).addScaledVector(new THREE.Vector3(...dir).normalize(), lift);
 
-    // Nose, with a little shine
+    // Nose: a sculpted rounded triangle with two nostrils underneath
     const noseDir = [0, -0.07, 1];
-    const nosePos = onFace(noseDir, 0.012);
-    const nose = mesh(SPHERE, mat.nose, { pos: nosePos.toArray(), scale: [0.08, 0.056, 0.05], rot: [0.25, 0, 0] });
+    const nosePos = onFace(noseDir, 0.008);
+    const noseGeo = sculpt({
+        center: [0, 0, 0], size: 0.1, resolution: 44, smoothing: 3,
+        blobs: [{ p: [-0.036, 0.012, 0], r: 0.04, blend: 7 }, { p: [0.036, 0.012, 0], r: 0.04, blend: 7 }, { p: [0, -0.026, 0.006], r: 0.033, blend: 7 }],
+        scale: [1, 0.95, 0.72],
+    });
+    const nose = mesh(noseGeo, mat.nose, { pos: nosePos.toArray(), rot: [0.22, 0, 0] });
+    for (const side of [-1, 1]) {
+        nose.add(mesh(SPHERE_LOW, mat.ink, { pos: [side * 0.024, -0.024, 0.022], scale: [0.013, 0.007, 0.009], rot: [0.5, 0, side * 0.45] }));
+    }
     head.add(nose);
 
     // Mouth: a "w" smile with a philtrum, plus an open mouth (cavity, tongue, two teeth) for talking
     parts.smile = new THREE.Group();
-    parts.smile.add(tube([[-0.13, -0.2, 0.5], [-0.065, -0.235, 0.5], [0, -0.2, 0.5], [0.065, -0.235, 0.5], [0.13, -0.2, 0.5]].map((d) => onFace(d, 0.006)), 0.011, mat.ink));
-    parts.smile.add(tube([onFace([0, -0.11, 0.5], 0.006), onFace([0, -0.19, 0.5], 0.006)], 0.011, mat.ink, 8));
+    const swell = (t) => 0.35 + 0.65 * Math.sin(Math.PI * t);
+    for (const side of [-1, 1]) {
+        parts.smile.add(taperedTube([[0, -0.2, 0.5], [side * 0.035, -0.235, 0.5], [side * 0.08, -0.232, 0.5], [side * 0.13, -0.2, 0.5]].map((d) => onFace(d, 0.006)), 0.011, mat.ink, swell));
+    }
+    parts.smile.add(taperedTube([onFace([0, -0.11, 0.5], 0.006), onFace([0, -0.2, 0.5], 0.006)], 0.009, mat.ink, (t) => 0.7 + 0.3 * t, 12));
     head.add(parts.smile);
     parts.mouth = new THREE.Group();
     parts.mouth.position.copy(onFace([0, -0.27, 0.5], -0.012));
@@ -387,7 +569,7 @@ export function buildTiger({ quality = 'high' } = {}) {
         }
         [[-0.16, 0.0, -0.1], [-0.19, -0.06, -0.2], [-0.22, -0.13, -0.3]].forEach(([y0, y1, y2], i) => {
             const root = onFace([side * 0.22, y0, 0.46], 0.0);
-            head.add(tube([root, [root.x + side * 0.16, 0.47 + y1 * 1.2, root.z - 0.03], [root.x + side * 0.32, 0.47 + y2 * 1.1, root.z - 0.1]], 0.0045, mat.whisker, 20));
+            head.add(taperedTube([root, [root.x + side * 0.16, 0.47 + y1 * 1.2, root.z - 0.03], [root.x + side * 0.34, 0.47 + y2 * 1.1, root.z - 0.11]], 0.0055, mat.whisker, (t) => 1 - 0.88 * t, 40));
         });
     }
 
@@ -403,13 +585,15 @@ export function buildTiger({ quality = 'high' } = {}) {
         eye.rotation.set(-0.06, side * 0.3, 0);
         eye.scale.setScalar(1.1);
         eye.add(mesh(SPHERE, mat.eyeWhite, { scale: [0.125, 0.145, 0.075] }));
+        // iris and pupil move together when the eye looks around
         const pupil = new THREE.Group();
         pupil.position.z = 0.05;
-        pupil.add(mesh(SPHERE, mat.iris, { pos: [0, 0, -0.004], scale: [0.088, 0.098, 0.03] }));
-        pupil.add(mesh(SPHERE, mat.pupil, { scale: [0.072, 0.082, 0.034] }));
-        pupil.add(mesh(SPHERE_LOW, mat.glint, { pos: [-0.028, 0.034, 0.03], scale: 0.022 }));
-        pupil.add(mesh(SPHERE_LOW, mat.glint, { pos: [0.022, -0.03, 0.03], scale: 0.011 }));
+        pupil.add(mesh(irisCap(), mat.iris, { scale: [0.09, 0.1, 0.034] }));
         eye.add(pupil);
+        // a wet cornea over the front, and catchlights that stay put (they belong to the light, not the pupil)
+        eye.add(mesh(SPHERE, mat.cornea, { scale: [0.127, 0.147, 0.088] }));
+        eye.add(mesh(SPHERE_LOW, mat.glint, { pos: [-0.03, 0.04, 0.074], scale: [0.02, 0.022, 0.008] }));
+        eye.add(mesh(SPHERE_LOW, mat.glint, { pos: [0.026, -0.03, 0.078], scale: [0.009, 0.009, 0.004] }));
 
         // The lid is a fur shell in a space shaped like the eyeball (a little deeper, so it closes
         // over the pupil and glints), so it hugs the eye at every angle. A dark rim reads as lashes.
@@ -417,7 +601,7 @@ export function buildTiger({ quality = 'high' } = {}) {
         lidSpace.scale.set(0.125 * 1.07, 0.145 * 1.07, 0.075 * 1.5);
         const lid = new THREE.Group();
         lid.add(mesh(LID_CAP, mat.lid));
-        lid.add(mesh(new THREE.TorusGeometry(1, 0.06, 8, 48), mat.ink, { rot: [Math.PI / 2, 0, 0] }));
+        lid.add(mesh(new THREE.TorusGeometry(1, 0.045, 8, 64), mat.ink, { rot: [Math.PI / 2, 0, 0] }));
         lid.rotation.x = LID_OPEN;
         lidSpace.add(lid);
         eye.add(lidSpace);
@@ -436,7 +620,7 @@ export function buildTiger({ quality = 'high' } = {}) {
     // Brows, resting on the brow ridge
     parts.brows = new THREE.Group();
     for (const side of [-1, 1]) {
-        parts.brows.add(tube([onFace([side * 0.1, 0.3, 0.42], 0.012), onFace([side * 0.19, 0.33, 0.4], 0.012), onFace([side * 0.28, 0.3, 0.36], 0.012)], 0.017, mat.ink, 20));
+        parts.brows.add(taperedTube([onFace([side * 0.1, 0.3, 0.42], 0.012), onFace([side * 0.19, 0.335, 0.4], 0.012), onFace([side * 0.29, 0.3, 0.35], 0.012)], 0.019, mat.ink, (t) => 0.45 + 0.55 * Math.sin(Math.PI * (0.15 + 0.7 * t)), 32));
     }
     head.add(parts.brows);
 

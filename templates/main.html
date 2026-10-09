@@ -19,7 +19,7 @@
             root.dataset.theme = theme;
         })();
     </script>
-    <title>{% block title %}Tasks{% endblock %} | To-Do</title>
+    <title>{% block title %}Tasks{% endblock %} | Doneward</title>
     <link rel="icon" href="{% static 'images/logo.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{% static 'images/logo-180.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,7 +52,7 @@
             <div class="footer-brand">
                 <a class="logo" href="{% url 'landing' %}">
                     <svg class="logo-mark" aria-hidden="true"><use href="#logo-mark"></use></svg>
-                    <span class="logo-word">To-Do</span>
+                    <span class="logo-word">Doneward</span>
                 </a>
                 <p>A calm place for everything you need to do.</p>
             </div>
@@ -68,7 +68,7 @@
             </nav>
         </div>
         <div class="container footer-meta">
-            <span>&copy; {% now "Y" %} To-Do</span>
+            <span>&copy; {% now "Y" %} Doneward</span>
             <span>Built by Anurag with Django</span>
         </div>
     </footer>

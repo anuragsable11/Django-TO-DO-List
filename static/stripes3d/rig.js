@@ -79,7 +79,8 @@ export function createRig(parts, stage, { reduceMotion, facing: initialFacing = 
 
         // mouth: flaps while talking, open when happy
         let mouthTarget = 0;
-        if (talking) mouthTarget = Math.sin(t * 19) > 0 ? 0.9 : 0.2;
+        // speech: overlapping rhythms read as syllables instead of a mechanical flap
+        if (talking) mouthTarget = Math.max(0.12, 0.5 + 0.32 * Math.sin(t * 15) + 0.18 * Math.sin(t * 23.7 + 1.3));
         else if (happy || cheering) mouthTarget = 0.85;
         ease(mouth, mouthTarget, dt, instant, 520, 30);
         const open = Math.max(mouth.x, 0);
@@ -95,8 +96,9 @@ export function createRig(parts, stage, { reduceMotion, facing: initialFacing = 
         let closed = 0;
         if (blinkAge >= 0) {
             blinkAge += dt;
-            closed = blinkAge < 0.18 ? Math.sin(Math.PI * blinkAge / 0.18) : 0;
-            if (blinkAge >= 0.18) blinkAge = -1;
+            // lids drop fast and lift a little slower, like a real blink
+            closed = blinkAge < 0.07 ? Math.sin((Math.PI / 2) * blinkAge / 0.07) : Math.cos((Math.PI / 2) * Math.min((blinkAge - 0.07) / 0.13, 1));
+            if (blinkAge >= 0.2) blinkAge = -1;
         }
         parts.lids.forEach((lid) => { lid.rotation.x = LID_OPEN + (LID_CLOSED - LID_OPEN) * closed; });
         parts.eyes.forEach((eye) => { eye.visible = !cheering; });

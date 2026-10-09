@@ -54,17 +54,12 @@ const GLSL = {
  * furMaterial({ shell, shells, length, density, color, vertexColors, sheenColor, roughness })
  * shell = 0 is the solid base surface; 1..shells are the fuzz layers.
  */
-export function furMaterial({ shell = 0, shells = 1, length = 0.03, density = 300, color = 0xffffff, vertexColors = true, sheenColor = '#ffd2a0', roughness = 0.8 } = {}) {
-    const material = new THREE.MeshPhysicalMaterial({
-        color,
-        vertexColors,
-        roughness,
-        sheen: 1,
-        sheenRoughness: 0.45,
-        sheenColor,
-        // shells: smooth hair edges through multisampling instead of hard discards
-        alphaToCoverage: shell > 0,
-    });
+export function furMaterial({ shell = 0, shells = 1, length = 0.03, density = 300, color = 0xffffff, vertexColors = true, sheenColor = '#ffdcb4', roughness = 0.8 } = {}) {
+    // The base surface gets the full velvet sheen; the fuzz layers use a lighter material, since
+    // they are drawn many times over and mostly show at the silhouette.
+    const material = shell > 0
+        ? new THREE.MeshStandardMaterial({ color, vertexColors, roughness: 0.9, alphaToCoverage: true })
+        : new THREE.MeshPhysicalMaterial({ color, vertexColors, roughness, sheen: 1, sheenRoughness: 0.45, sheenColor });
     const uniforms = {
         uShell: { value: shell / shells },
         uFurLength: { value: length },
@@ -101,6 +96,7 @@ export function furredMesh(geometry, { shells = 14, length = 0.03, density = 300
         const shell = new THREE.Mesh(geometry, furMaterial({ shell: i, shells, length, density, vertexColors, color }));
         shell.receiveShadow = true;
         shell.renderOrder = i;
+        shell.userData.furShell = { index: i, total: shells }; // lets the renderer thin the fur on slow devices
         group.add(shell);
     }
     return group;

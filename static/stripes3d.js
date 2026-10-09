@@ -52,19 +52,60 @@ function run(host, canvas, stage, mode, parts, rig) {
     let last = 0;
     let shown = false;
 
-    function frame(now) {
-        if (!running) return;
-        rig.advance((now - last) / 1000);
+    // Adaptive quality, so motion stays smooth on any device. Every 1.5 s of animation, if the
+    // typical frame took longer than ~22 ms, step down once (never back up, to avoid flicker):
+    //   1: every second fur layer  2: every fourth fur layer  3: render at 1x pixel density
+    // The fur keeps its length and look at each step; it just gets a little thinner.
+    let furStep = 1;
+    let level = 0;
+    let watchFrom = 0;
+    let samples = [];
+    function setFurStep(step) {
+        furStep = step;
+        parts.tiger.traverse((o) => {
+            const f = o.userData.furShell;
+            if (f) o.visible = f.index % step === 0 || f.index === f.total;
+        });
+    }
+    function adapt(now, ms) {
+        if (!watchFrom) watchFrom = now + 1000;  // let shaders compile first
+        if (now < watchFrom) return;
+        samples.push(ms);
+        if (now - watchFrom < 1500 || samples.length < 3) return;
+        samples.sort((a, b) => a - b);
+        const typical = samples[Math.floor(samples.length / 2)];
+        samples = [];
+        watchFrom = now;
+        if (typical <= 22 || level >= 3) return;
+        level += 1;
+        if (level <= 2) setFurStep(2 ** level);
+        else if (stage.renderer.getPixelRatio() > 1) {
+            stage.renderer.setPixelRatio(1);
+            stage.resize();
+        }
+    }
+
+    // Only one loop may ever run: each start gets a new id, and older pending frames see it and stop
+    let loopId = 0;
+
+    function frame(id, now) {
+        if (!running || id !== loopId) return;
+        const ms = now - last;
+        if (ms > 0) {
+            adapt(now, ms);
+            rig.advance(ms / 1000);
+        }
         last = now;
         stage.render();
-        requestAnimationFrame(frame);
+        requestAnimationFrame((t) => frame(id, t));
     }
 
     function startLoop() {
         if (running || reduceMotion) return;
         running = true;
+        const id = ++loopId;
         last = performance.now();
-        requestAnimationFrame(frame);
+        requestAnimationFrame((t) => frame(id, t));
     }
 
     // reduced motion: no loop, just a fresh still whenever something changes
@@ -156,6 +197,11 @@ function run(host, canvas, stage, mode, parts, rig) {
             if (reduceMotion) still();
         },
         face(radians) { rig.face(radians); if (reduceMotion) still(); },
+        // rendering cost and fur level, for debugging
+        stats() {
+            const info = stage.renderer.info.render;
+            return { triangles: info.triangles, drawCalls: info.calls, level, furStep, pixelRatio: stage.renderer.getPixelRatio() };
+        },
         state: rig.state,
     };
     host.stripes3d = api; // handy for debugging in the console

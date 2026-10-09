@@ -1,5 +1,5 @@
 /* ==========================================================
-   To-Do — "Daybook" design system
+   Doneward — "Daybook" design system
    Warm paper, ink and tiger orange. Serif display type,
    mono details, light + dark themes.
    ========================================================== */
@@ -307,6 +307,7 @@ svg {
 }
 
 .header-link {
+    white-space: nowrap;
     padding: 8px 13px;
     font-size: 14px;
     font-weight: 500;
@@ -3165,6 +3166,29 @@ svg {
 
     .sk-text {
         font-size: 24px;
+    }
+}
+
+/* very small phones: a slightly tighter header so the wordmark and controls share one line */
+@media (max-width: 400px) {
+    .site-header .container {
+        padding: 0 12px;
+    }
+
+    .logo {
+        gap: 8px;
+    }
+
+    .logo-word {
+        font-size: 23px;
+    }
+
+    .header-nav {
+        gap: 2px;
+    }
+
+    .header-link {
+        padding: 8px 9px;
     }
 }
 

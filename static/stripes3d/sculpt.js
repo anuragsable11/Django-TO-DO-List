@@ -52,10 +52,12 @@ export function surfacePoint(blobs, origin, dir, maxDist = 2) {
  *   paint(p, n)    returns [r, g, b] for a surface point (optional)
  *   scale          [x, y, z] applied around `center` after sculpting (optional)
  *   smoothing      passes of shrink-free (Taubin) smoothing to take the grid wobble out (default 2)
+ *   ao             bake ambient occlusion into the colours: { strength, reach, occluders }, where
+ *                  occluders are extra blobs (e.g. the head, for the body) that also cast occlusion
  * Returns an indexed BufferGeometry in the blobs' coordinate space. Normals come from the field
  * gradient, so they are smooth everywhere, independent of the triangles.
  */
-export function sculpt({ center, size, resolution, blobs, paint, scale, smoothing = 2, maxTriangles = 160000 }) {
+export function sculpt({ center, size, resolution, blobs, paint, scale, smoothing = 2, ao, maxTriangles = 160000 }) {
     const mc = new MarchingCubes(resolution, new THREE.MeshBasicMaterial(), false, false, maxTriangles);
     mc.isolation = ISO;
     mc.reset();
@@ -131,9 +133,61 @@ export function sculpt({ center, size, resolution, blobs, paint, scale, smoothin
             color[i * 3 + 1] = c[1];
             color[i * 3 + 2] = c[2];
         }
+        if (ao) bakeOcclusion(geometry, color, blobs, { center, scale: [sx, sy, sz], ...ao });
         geometry.setAttribute('color', new THREE.BufferAttribute(color, 3));
     }
     return geometry;
+}
+
+/* Ambient occlusion: from each vertex, probe a small hemisphere around the normal and measure how
+   much of it lies inside the sculpt (or the extra occluders). Creases and contact areas get darker,
+   softly, the way they do in an offline render. Works in the blobs' own (unscaled) space. */
+const AO_DIRS = (() => {
+    const dirs = [[0, 0, 1]];
+    for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const tilt = i % 2 ? 0.95 : 0.6;
+        dirs.push([Math.cos(a) * Math.sin(tilt), Math.sin(a) * Math.sin(tilt), Math.cos(tilt)]);
+    }
+    return dirs;
+})();
+
+function bakeOcclusion(geometry, color, blobs, { center, scale, strength = 0.55, reach = 0.12, occluders = [] }) {
+    const all = blobs.concat(occluders);
+    const pos = geometry.getAttribute('position');
+    const nor = geometry.getAttribute('normal');
+    const n = new THREE.Vector3();
+    const t = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    const steps = [0.3, 0.6, 1.0];
+    for (let i = 0; i < pos.count; i++) {
+        // back into blob space
+        const px = center[0] + (pos.getX(i) - center[0]) / scale[0];
+        const py = center[1] + (pos.getY(i) - center[1]) / scale[1];
+        const pz = center[2] + (pos.getZ(i) - center[2]) / scale[2];
+        n.set(nor.getX(i) * scale[0], nor.getY(i) * scale[1], nor.getZ(i) * scale[2]).normalize();
+        up.set(Math.abs(n.y) < 0.9 ? 0 : 1, Math.abs(n.y) < 0.9 ? 1 : 0, 0);
+        t.crossVectors(up, n).normalize();
+        b.crossVectors(n, t);
+        let blocked = 0;
+        let total = 0;
+        for (const d of AO_DIRS) {
+            const dx = t.x * d[0] + b.x * d[1] + n.x * d[2];
+            const dy = t.y * d[0] + b.y * d[1] + n.y * d[2];
+            const dz = t.z * d[0] + b.z * d[1] + n.z * d[2];
+            for (const k of steps) {
+                const r = reach * k;
+                const f = fieldAt(all, px + dx * r, py + dy * r, pz + dz * r);
+                blocked += smoothstep(ISO * 0.55, ISO * 1.15, f) * (1.15 - k * 0.3);
+                total += 1.15 - k * 0.3;
+            }
+        }
+        const light = 1 - strength * Math.min(blocked / total * 1.6, 1);
+        color[i * 3] *= light;
+        color[i * 3 + 1] *= light * (0.98 + 0.02 * light);   // occlusion warms slightly, like skin
+        color[i * 3 + 2] *= light * (0.95 + 0.05 * light);
+    }
 }
 
 // Taubin smoothing: a shrinking pass followed by a slightly larger inflating one, so the surface
