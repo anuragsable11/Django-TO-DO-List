@@ -25,6 +25,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Vercel sets VERCEL=1 in its environment; locally it's unset.
 ON_VERCEL = os.environ.get('VERCEL') == '1'
 
+
+def load_env_file(path):
+    """Read KEY=value lines from a local .env file into os.environ.
+    Variables that are already set win, so a real environment always overrides the file."""
+    try:
+        lines = path.read_text(encoding='utf-8-sig').splitlines()
+    except FileNotFoundError:
+        return
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.removeprefix('export ').strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in '"\'':
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+
+
+# Locally, secrets such as DATABASE_URL live in .env (gitignored).
+# On Vercel they come from the project's Environment Variables instead.
+if not ON_VERCEL:
+    load_env_file(BASE_DIR / '.env')
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
@@ -99,13 +124,23 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Local: SQLite. Production: set DATABASE_URL (e.g. a Neon / Vercel Postgres URL),
-# because Vercel's filesystem is read-only and SQLite can't save anything there.
+# With DATABASE_URL set (in .env locally, in Vercel's Environment Variables in production),
+# Django uses that Postgres database, e.g. Neon. Without it, a local SQLite file.
+# Vercel's filesystem is read-only, so a deployment always needs DATABASE_URL.
 if os.environ.get('DATABASE_URL'):
     import dj_database_url
     DATABASES = {
+        # conn_max_age=0: open a connection per request and close it after, which suits
+        # serverless functions; Neon's pooler ("-pooler" host) keeps that cheap.
         'default': dj_database_url.config(conn_max_age=0, ssl_require=True)
     }
+    # A transaction-mode pooler (PgBouncer, which Neon's pooled URL uses) can't keep
+    # server-side cursors open between transactions, so Django must not use them.
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+    # Wait a little longer than libpq's default while a suspended Neon database wakes up.
+    DATABASES['default'].setdefault('OPTIONS', {}).setdefault('connect_timeout', 15)
+elif ON_VERCEL:
+    raise ImproperlyConfigured('Set the DATABASE_URL environment variable in Vercel (your Neon connection string).')
 else:
     DATABASES = {
         'default': {

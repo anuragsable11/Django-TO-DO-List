@@ -6,3 +6,5 @@ db.sqlite3
 media/
 staticfiles/
 myenv/
+.env.*
+!.env.example

@@ -1,0 +1,11 @@
+# Never upload local secrets, the local database or the virtualenv with `vercel deploy`
+.env
+.env.*
+!.env.example
+db.sqlite3
+myenv/
+__pycache__/
+*.pyc
+.vscode/
+media/
+staticfiles/
