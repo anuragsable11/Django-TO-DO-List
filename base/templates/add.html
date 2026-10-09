@@ -11,26 +11,6 @@
     </div>
 </header>
 
-<form method="POST" class="form-card">
-    {% csrf_token %}
-    <div class="field">
-        <label for="title">Title</label>
-        <input id="title" class="input input-lg" type="text" name="title" maxlength="30" required autofocus
-               placeholder="e.g. Send the weekly report">
-    </div>
-    <div class="field">
-        <label for="desc">Note <span class="label-optional">Optional</span></label>
-        <input id="desc" class="input" type="text" name="desc" maxlength="30"
-               placeholder="e.g. Before 5 pm on Friday" aria-describedby="desc-help">
-        <p class="field-help" id="desc-help">Up to 30 characters.</p>
-    </div>
-    <div class="form-actions">
-        <a href="{% url 'home' %}" class="btn btn-quiet">Cancel</a>
-        <button type="submit" class="btn btn-ink">
-            Add task
-            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
-        </button>
-    </div>
-</form>
+{% include "partials/task_form.html" with submit_label="Add task" %}
 
 {% endblock %}

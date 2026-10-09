@@ -1,0 +1,66 @@
+{% extends "main.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings">
+    <header class="masthead">
+        <div>
+            <p class="label">Signed in as {{ user.username }}</p>
+            <h1 class="masthead-title">Settings</h1>
+        </div>
+        <a href="{% url 'home' %}" class="btn btn-quiet btn-sm">
+            Back to tasks
+            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </a>
+    </header>
+
+    <form method="POST" class="form-card" novalidate>
+        {% csrf_token %}
+        <h2 class="card-title"><svg class="icon" aria-hidden="true"><use href="#i-mail"></use></svg> Morning email</h2>
+        <p class="card-text">
+            Each morning, Stripes emails you what's overdue and what's due that day, so nothing slips while the site is closed.
+            On days with nothing due, no email is sent.
+        </p>
+
+        <div class="field{% if form.email.errors %} has-error{% endif %}">
+            <label for="{{ form.email.id_for_label }}">Email address</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <label class="switch-row">
+            <span>
+                <span class="switch-title">Send me the morning email</span>
+                <span class="field-help">Arrives around {{ digest_time }} your time ({{ profile.timezone }}).</span>
+            </span>
+            <input type="checkbox" name="digest_enabled" class="switch" {% if form.digest_enabled.value %}checked{% endif %}>
+        </label>
+
+        {% if not email_ready %}
+        <div class="alert alert-note">
+            <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+            <p>{% if on_vercel %}Email sending isn't set up on this server yet, so nothing will be sent until it is.{% else %}Running locally without email settings: emails are printed in the terminal instead of being sent.{% endif %}</p>
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            {% if user.email %}
+            <button type="submit" form="test-email" class="btn btn-quiet form-actions-start">Send a test email</button>
+            {% endif %}
+            <button type="submit" class="btn btn-ink">Save</button>
+        </div>
+    </form>
+    <form method="POST" action="{% url 'digest_test' %}" id="test-email" hidden>{% csrf_token %}</form>
+
+    <section class="form-card settings-shortcuts">
+        <h2 class="card-title">Keyboard shortcuts</h2>
+        <dl class="shortcuts">
+            <div><dt><kbd class="kbd">N</kbd></dt><dd>Write a new task</dd></div>
+            <div><dt><kbd class="kbd">/</kbd></dt><dd>Search</dd></div>
+            <div><dt><kbd class="kbd">Ctrl</kbd> <kbd class="kbd">Z</kbd></dt><dd>Undo the last change, while its message shows</dd></div>
+            <div><dt><kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd></dt><dd>Move a task, with its drag handle focused</dd></div>
+        </dl>
+    </section>
+</div>
+{% endblock %}

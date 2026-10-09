@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your day</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f3ec;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#191612;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f3ec;padding:32px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fffdf9;border:1px solid #e6dfd2;border-radius:18px;">
+<tr><td style="padding:28px 28px 8px;">
+    <p style="margin:0;font-family:Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;">Doneward &middot; {{ today|date:"l j F" }}</p>
+    <h1 style="margin:10px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:400;line-height:1.1;">Good morning, {{ user.username }}.</h1>
+    <p style="margin:0;font-size:15px;color:#4b453c;">You have {{ summary }}.</p>
+</td></tr>
+{% if due_today %}
+<tr><td style="padding:18px 28px 0;">
+    <p style="margin:0 0 6px;font-family:Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#736a5d;">Due today</p>
+    {% for task in due_today %}
+    <p style="margin:0;padding:10px 0;border-top:1px solid #e6dfd2;font-size:15px;">
+        <span style="color:#e8590c;">&#9675;</span>&nbsp; {{ task.title }}
+        {% if task.is_high %}<span style="font-size:12px;color:#c2410c;">&nbsp;High</span>{% endif %}
+        {% if task.task_list %}<span style="font-size:12px;color:#736a5d;">&nbsp;&middot; {{ task.task_list.name }}</span>{% endif %}
+    </p>
+    {% endfor %}
+</td></tr>
+{% endif %}
+{% if overdue %}
+<tr><td style="padding:18px 28px 0;">
+    <p style="margin:0 0 6px;font-family:Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#b42318;">Overdue</p>
+    {% for task in overdue %}
+    <p style="margin:0;padding:10px 0;border-top:1px solid #e6dfd2;font-size:15px;">
+        <span style="color:#b42318;">&#9675;</span>&nbsp; {{ task.title }}
+        <span style="font-size:12px;color:#b42318;">&nbsp;due {{ task.due_label }}</span>
+        {% if task.task_list %}<span style="font-size:12px;color:#736a5d;">&nbsp;&middot; {{ task.task_list.name }}</span>{% endif %}
+    </p>
+    {% endfor %}
+</td></tr>
+{% endif %}
+<tr><td style="padding:24px 28px 28px;">
+    <a href="{{ site_url }}/tasks/today/" style="display:inline-block;padding:12px 22px;background:#191612;color:#f6f3ec;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;">Open today's list</a>
+</td></tr>
+</table>
+<p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:1.5;color:#736a5d;">
+    Stripes sends this because the morning email is on.
+    <a href="{{ site_url }}/settings/" style="color:#736a5d;">Turn it off in Settings</a>.
+</p>
+</td></tr>
+</table>
+</body>
+</html>

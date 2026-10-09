@@ -1,0 +1,53 @@
+{% extends "app.html" %}
+
+{% block title %}{% if creating %}New list{% else %}Edit {{ task_list.name }}{% endif %}{% endblock %}
+
+{% block app_content %}
+
+<header class="masthead">
+    <div>
+        <p class="label">{% if creating %}Group your tasks{% else %}List settings{% endif %}</p>
+        <h1 class="masthead-title">{% if creating %}New <em>list</em>{% else %}Edit <em>list</em>{% endif %}</h1>
+    </div>
+</header>
+
+<form method="POST" class="form-card" novalidate>
+    {% csrf_token %}
+    <div class="field{% if form.name.errors %} has-error{% endif %}">
+        <label for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+        {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        {% if creating %}<p class="field-help">Tip: typing <b>#name</b> at the end of a task also files it here, and makes the list if it's new.</p>{% endif %}
+    </div>
+
+    <fieldset class="field">
+        <legend>Colour</legend>
+        <div class="swatches">
+            {% for radio in form.color %}
+            <label class="swatch" title="{{ radio.choice_label }}">
+                {{ radio.tag }}
+                <span class="dot dot-{{ radio.data.value }}" aria-hidden="true"></span>
+                <span class="visually-hidden">{{ radio.choice_label }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+
+    <div class="form-actions">
+        {% if not creating %}
+        <button type="submit" form="delete-list" class="btn btn-quiet btn-danger-quiet form-actions-start"
+                data-confirm="Delete the list &quot;{{ task_list.name }}&quot;? Its tasks stay in Tasks, just without a list.">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+            Delete list
+        </button>
+        {% endif %}
+        <a href="{% if creating %}{% url 'home' %}{% else %}{% url 'list' task_list.pk %}{% endif %}" class="btn btn-quiet">Cancel</a>
+        <button type="submit" class="btn btn-ink">{% if creating %}Create list{% else %}Save changes{% endif %}</button>
+    </div>
+</form>
+
+{% if not creating %}
+<form method="POST" action="{% url 'list_delete' task_list.pk %}" id="delete-list" hidden>{% csrf_token %}</form>
+{% endif %}
+
+{% endblock %}

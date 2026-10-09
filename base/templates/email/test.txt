@@ -1,0 +1,11 @@
+{% autoescape off %}Hi {{ user.username }},
+
+Your morning email from Doneward is set up and this address works.
+
+Nothing is overdue or due today right now, so a real morning email would not be sent today.
+On days with something due, it lists those tasks.
+
+Your list: {{ site_url }}/tasks/
+
+Stripes, from Doneward
+{% endautoescape %}

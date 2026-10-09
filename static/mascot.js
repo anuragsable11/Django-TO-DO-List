@@ -39,7 +39,11 @@
         'Tip: break big tasks into smaller steps. They are much easier to finish.',
         'Tip: start with the hardest task. Everything after it feels easier.',
         'Tip: a quick look at your list each morning keeps surprises away.',
-        'Tip: deleted something by mistake? You can restore it from the trash.'
+        'Tip: deleted something by mistake? You can restore it from the trash.',
+        'Tip: end a task with “friday” or “12 oct” and it gets that due date.',
+        'Tip: type “every monday” after a task and it comes back each week.',
+        'Tip: add #work to a task to file it in your Work list.',
+        'Tip: checked something off too soon? Press Undo in the message, or Ctrl+Z.'
     ];
 
     var TICKLES = [
@@ -83,19 +87,31 @@
         if (!data.open) {
             lines.push({ text: "Your list is empty. Add a task and I'll help you remember it.", pose: 'point', link: ['Add a task', urls.urlAdd] });
         } else {
+            var summary = data.open === 1
+                ? 'You have 1 open task.'
+                : 'You have ' + data.open + ' open tasks.';
+            var dueBits = [];
+            if (data.due_today) dueBits.push(data.due_today + ' due today');
+            if (data.overdue) dueBits.push(data.overdue + ' overdue');
+            summary += dueBits.length
+                ? ' ' + dueBits.join(' and ') + ". Let's start there."
+                : (data.open === 1 ? ' You can do this!' : " Let's take them one at a time.");
             lines.push({
-                text: data.open === 1
-                    ? 'You have 1 open task. You can do this!'
-                    : 'You have ' + data.open + " open tasks. Let's take them one at a time.",
+                text: summary,
                 pose: 'point',
-                link: ['View tasks', urls.urlHome]
+                link: data.overdue || data.due_today ? ['View today', urls.urlToday] : ['View tasks', urls.urlHome]
             });
 
-            // One reminder per task, oldest first
-            tasks.forEach(function (task, i) {
-                var lead = i === 0 && data.open > 1 ? 'Your oldest task:' : REMINDERS[i % REMINDERS.length];
+            // One reminder per task: overdue first, then due today, then the soonest due
+            var plain = 0;
+            tasks.forEach(function (task) {
+                var lead;
+                if (task.when === 'overdue') lead = 'Overdue since ' + (task.due === 'Yesterday' ? 'yesterday' : task.due) + ':';
+                else if (task.when === 'today') lead = 'Due today:';
+                else if (task.due) lead = 'Due ' + (task.due === 'Tomorrow' ? 'tomorrow' : task.due) + ':';
+                else lead = REMINDERS[plain++ % REMINDERS.length];
                 var line = lead + ' “' + task.title + '”';
-                if (task.desc) line += ' — ' + task.desc;
+                if (task.notes) line += ' — ' + task.notes;
                 lines.push({ text: line, pose: 'point', task: task });
             });
 

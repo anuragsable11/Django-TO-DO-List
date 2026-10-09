@@ -6,28 +6,11 @@
 
 <header class="masthead">
     <div>
-        <p class="label">Make a change</p>
+        <p class="label">Make a change{% if data.status == 'done' %} &middot; completed{% endif %}</p>
         <h1 class="masthead-title">Edit <em>task</em></h1>
     </div>
 </header>
 
-<form method="POST" class="form-card">
-    {% csrf_token %}
-    <div class="field">
-        <label for="title">Title</label>
-        <input id="title" class="input input-lg" type="text" name="title" maxlength="30" required autofocus
-               value="{{ data.title }}">
-    </div>
-    <div class="field">
-        <label for="desc">Note <span class="label-optional">Optional</span></label>
-        <input id="desc" class="input" type="text" name="desc" maxlength="30"
-               value="{{ data.desc }}" aria-describedby="desc-help">
-        <p class="field-help" id="desc-help">Up to 30 characters.</p>
-    </div>
-    <div class="form-actions">
-        <a href="{% url 'home' %}" class="btn btn-quiet">Cancel</a>
-        <button type="submit" class="btn btn-ink">Save changes</button>
-    </div>
-</form>
+{% include "partials/task_form.html" with submit_label="Save changes" %}
 
 {% endblock %}

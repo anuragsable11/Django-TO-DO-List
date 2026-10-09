@@ -1,0 +1,101 @@
+{% load doneward %}
+{% comment %}One task in a ledger. Needs: task, next; optional: draggable, query, view.{% endcomment %}
+<li class="task{% if task.status == 'done' %} is-done{% elif task.status == 'trashed' %} is-trashed{% endif %}{% if task.is_high %} is-high{% elif task.is_low %} is-low{% endif %}" data-id="{{ task.id }}">
+    {% if task.status == 'open' %}
+        {% if draggable %}
+        <button type="button" class="task-grip" data-grip aria-label="Move “{{ task.title }}”. Use the arrow keys to move it up or down." title="Drag to reorder">
+            <span class="task-num" aria-hidden="true">{{ counter|stringformat:"02d" }}</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-grip"></use></svg>
+        </button>
+        {% else %}
+        <span class="task-num" aria-hidden="true">{{ counter|stringformat:"02d" }}</span>
+        {% endif %}
+        <form method="POST" action="{% url 'hcomplete' task.id %}" class="inline-form" data-complete>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="check" title="Mark as done" aria-label="Mark “{{ task.title }}” as done">
+                <svg class="check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5 10 16.5 18 8"/></svg>
+            </button>
+        </form>
+    {% elif task.status == 'done' %}
+        <span class="task-num" aria-hidden="true">{{ counter|stringformat:"02d" }}</span>
+        <form method="POST" action="{% url 'restore' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="check is-checked" title="Mark as not done" aria-label="Mark “{{ task.title }}” as not done">
+                <svg class="check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5 10 16.5 18 8"/></svg>
+            </button>
+        </form>
+    {% else %}
+        <span class="task-num" aria-hidden="true">{{ counter|stringformat:"02d" }}</span>
+        <span class="task-marker" aria-hidden="true"><svg class="icon icon-sm"><use href="#i-trash"></use></svg></span>
+    {% endif %}
+
+    <div class="task-body">
+        <p class="task-title"><span>{% if query %}{{ task.title|highlight:query }}{% else %}{{ task.title }}{% endif %}</span></p>
+        {% if task.notes %}<p class="task-desc">{% if query %}{{ task.notes|highlight:query }}{% else %}{{ task.notes }}{% endif %}</p>{% endif %}
+        {% with show_list=task.task_list %}
+        {% if task.due_date and task.status == 'open' or task.is_high or task.is_low or show_list and view != 'list' or task.repeat and task.status == 'open' %}
+        <div class="task-meta">
+            {% due_chip task %}
+            {% if task.repeat and task.status == 'open' and not task.due_date %}<span class="chip"><svg class="icon" aria-hidden="true"><use href="#i-repeat"></use></svg>{{ task.get_repeat_display }}</span>{% endif %}
+            {% if task.is_high %}<span class="chip chip-high"><svg class="icon" aria-hidden="true"><use href="#i-flag"></use></svg>High</span>{% elif task.is_low %}<span class="chip chip-low">Low</span>{% endif %}
+            {% if show_list and view != 'list' %}<a class="chip chip-list" href="{% url 'list' task.task_list_id %}"><span class="dot dot-{{ task.task_list.color }}" aria-hidden="true"></span>{{ task.task_list.name }}</a>{% endif %}
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if task.status == 'open' %}
+    <div class="task-actions task-actions-hover">
+        <a href="{% url 'update' task.id %}?next={{ next|urlencode }}" class="icon-btn" title="Edit" aria-label="Edit “{{ task.title }}”">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+        </a>
+        <form method="POST" action="{% url 'delete' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="icon-btn icon-btn-danger" title="Move to trash" aria-label="Move “{{ task.title }}” to trash">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+            </button>
+        </form>
+    </div>
+    {% elif task.status == 'done' %}
+    <div class="task-actions">
+        <form method="POST" action="{% url 'restore' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn btn-quiet btn-sm" aria-label="Restore “{{ task.title }}” to tasks">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restore"></use></svg>
+                <span class="hide-xs">Restore</span>
+            </button>
+        </form>
+        <form method="POST" action="{% url 'delete' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="icon-btn icon-btn-danger" title="Move to trash" aria-label="Move “{{ task.title }}” to trash">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="task-actions">
+        <form method="POST" action="{% url 'recover' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn btn-quiet btn-sm" aria-label="Restore “{{ task.title }}” to tasks">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restore"></use></svg>
+                <span class="hide-xs">Restore</span>
+            </button>
+        </form>
+        <form method="POST" action="{% url 'hdelete' task.id %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="icon-btn icon-btn-danger" title="Delete permanently"
+                    aria-label="Delete “{{ task.title }}” permanently"
+                    data-confirm="Delete &quot;{{ task.title }}&quot; permanently? This can't be undone.">
+                <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</li>

@@ -1,9 +1,9 @@
 {% extends "main.html" %}
 
-{% comment %}Layout for the signed-in task pages: a "daybook" rail (date, lists, progress, Stripes) + content.{% endcomment %}
+{% comment %}Layout for the signed-in task pages: a "daybook" rail (date, views, lists, progress, Stripes) + content.{% endcomment %}
 
 {% block content %}
-{% with current=request.resolver_match.url_name %}
+{% with current=request.resolver_match.url_name current_list=request.resolver_match.kwargs.pk %}
 <div class="app-shell">
     <aside class="app-rail">
         <div class="rail-date">
@@ -20,12 +20,35 @@
             <kbd class="kbd" aria-hidden="true">N</kbd>
         </a>
 
-        <nav class="rail-nav" aria-label="Task lists">
+        <form method="GET" action="{% url 'search' %}" class="rail-search" role="search">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input type="search" name="q" placeholder="Search" aria-label="Search tasks" aria-keyshortcuts="/"
+                   value="{% if current == 'search' %}{{ query }}{% endif %}" autocomplete="off" maxlength="100" data-search-input>
+            <kbd class="kbd" aria-hidden="true">/</kbd>
+        </form>
+
+        <nav class="rail-nav" aria-label="Views">
             <a href="{% url 'home' %}" class="rail-link{% if current == 'home' or current == 'add' or current == 'update' %} is-active{% endif %}"{% if current == 'home' %} aria-current="page"{% endif %}>
                 <svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>
                 <span>Tasks</span>
                 <span class="rail-count">{{ task_counts.open }}</span>
             </a>
+            <a href="{% url 'today' %}" class="rail-link{% if current == 'today' %} is-active{% endif %}"{% if current == 'today' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-today"></use></svg>
+                <span>Today</span>
+                <span class="rail-count">{{ task_counts.today }}</span>
+            </a>
+            <a href="{% url 'upcoming' %}" class="rail-link{% if current == 'upcoming' %} is-active{% endif %}"{% if current == 'upcoming' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-upcoming"></use></svg>
+                <span>Upcoming</span>
+                <span class="rail-count">{{ task_counts.upcoming }}</span>
+            </a>
+            <a href="{% url 'overdue' %}" class="rail-link{% if current == 'overdue' %} is-active{% endif %}{% if task_counts.overdue %} has-alert{% endif %}"{% if current == 'overdue' %} aria-current="page"{% endif %}>
+                <svg class="icon" aria-hidden="true"><use href="#i-overdue"></use></svg>
+                <span>Overdue</span>
+                <span class="rail-count">{{ task_counts.overdue }}</span>
+            </a>
+            <span class="rail-divider" aria-hidden="true"></span>
             <a href="{% url 'complete' %}" class="rail-link{% if current == 'complete' %} is-active{% endif %}"{% if current == 'complete' %} aria-current="page"{% endif %}>
                 <svg class="icon" aria-hidden="true"><use href="#i-check-circle"></use></svg>
                 <span>Completed</span>
@@ -37,6 +60,32 @@
                 <span class="rail-count">{{ task_counts.trash }}</span>
             </a>
         </nav>
+
+        <div class="rail-lists">
+            <div class="rail-section-head">
+                <span class="label">Lists</span>
+                <a href="{% url 'list_create' %}" class="icon-btn icon-btn-sm" title="New list" aria-label="New list" data-new-list>
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+                </a>
+            </div>
+            <nav class="rail-nav rail-nav-lists" aria-label="Lists">
+                {% for item in task_counts.lists %}
+                <a href="{% url 'list' item.pk %}" class="rail-link{% if current == 'list' and current_list == item.pk or current == 'list_edit' and current_list == item.pk %} is-active{% endif %}"{% if current == 'list' and current_list == item.pk %} aria-current="page"{% endif %}>
+                    <span class="dot dot-{{ item.color }}" aria-hidden="true"></span>
+                    <span class="rail-link-text">{{ item.name }}</span>
+                    <span class="rail-count">{{ item.open }}</span>
+                </a>
+                {% empty %}
+                <p class="rail-note rail-lists-empty">Group tasks into lists like Work or Home. Type <b>#work</b> in a task to start one.</p>
+                {% endfor %}
+            </nav>
+            <form method="POST" action="{% url 'list_create' %}" class="rail-new-list" data-new-list-form hidden>
+                {% csrf_token %}
+                <span class="dot dot-tangerine" aria-hidden="true"></span>
+                <input type="text" name="name" maxlength="40" placeholder="List name" aria-label="New list name" required autocomplete="off">
+                <button type="submit" class="btn btn-ink btn-sm">Add</button>
+            </form>
+        </div>
 
         <div class="rail-card rail-progress">
             <div class="rail-progress-head">
@@ -54,7 +103,13 @@
             <div>
                 <p class="rail-stripes-name">Stripes <span class="label">says</span></p>
                 <p class="rail-note">
-                    {% if task_counts.oldest %}“{{ task_counts.oldest.title }}” has waited the longest. Maybe today?{% elif task_counts.done %}All clear. Enjoy the calm, you earned it.{% else %}Add a task and I'll keep an eye on it for you.{% endif %}
+                    {% with focus=task_counts.attention %}
+                    {% if focus.kind == 'overdue' %}“{{ focus.task.title|truncatechars:60 }}” is overdue. Finish it, or give it a new date?
+                    {% elif focus.kind == 'today' %}“{{ focus.task.title|truncatechars:60 }}” is due today. A good place to start.
+                    {% elif focus.kind == 'oldest' %}“{{ focus.task.title|truncatechars:60 }}” has waited the longest. Maybe today?
+                    {% elif task_counts.done %}All clear. Enjoy the calm, you earned it.
+                    {% else %}Add a task and I'll keep an eye on it for you.{% endif %}
+                    {% endwith %}
                 </p>
             </div>
         </div>

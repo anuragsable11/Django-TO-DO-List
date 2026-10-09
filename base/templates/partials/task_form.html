@@ -1,0 +1,70 @@
+{% comment %}The New task / Edit task form. Needs: form, submit_label; optional: next.{% endcomment %}
+<form method="POST" class="form-card task-form" novalidate>
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-error" role="alert">
+        <svg class="icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    </div>
+    {% endif %}
+
+    <div class="field{% if form.title.errors %} has-error{% endif %}">
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="field{% if form.notes.errors %} has-error{% endif %}">
+        <label for="{{ form.notes.id_for_label }}">Notes <span class="label-optional">Optional</span></label>
+        {{ form.notes }}
+        {% for error in form.notes.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="field-row">
+        <div class="field{% if form.due_date.errors %} has-error{% endif %}">
+            <label for="{{ form.due_date.id_for_label }}">Due date <span class="label-optional">Optional</span></label>
+            {{ form.due_date }}
+            <div class="date-shortcuts" data-date-shortcuts="{{ form.due_date.id_for_label }}">
+                <button type="button" class="chip-btn" data-days="0">Today</button>
+                <button type="button" class="chip-btn" data-days="1">Tomorrow</button>
+                <button type="button" class="chip-btn" data-days="next-week">Next week</button>
+                <button type="button" class="chip-btn" data-days="">No date</button>
+            </div>
+            {% for error in form.due_date.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="field{% if form.repeat.errors %} has-error{% endif %}">
+            <label for="{{ form.repeat.id_for_label }}">Repeat</label>
+            {{ form.repeat }}
+            <p class="field-help">A repeating task comes back with its next date when you check it off.</p>
+        </div>
+    </div>
+
+    <div class="field-row">
+        <fieldset class="field">
+            <legend>Priority</legend>
+            <div class="segmented segmented-input">
+                {% for radio in form.priority %}
+                <label class="segmented-item is-{{ radio.choice_label|lower }}">
+                    {{ radio.tag }}
+                    <span>{% if radio.choice_label == 'High' %}<svg class="icon icon-sm" aria-hidden="true"><use href="#i-flag"></use></svg>{% endif %}{{ radio.choice_label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+        <div class="field">
+            <label for="{{ form.task_list.id_for_label }}">List</label>
+            {{ form.task_list }}
+            <p class="field-help"><a href="{% url 'list_create' %}" class="text-link">Make a new list</a></p>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a href="{{ next|default:'/tasks/' }}" class="btn btn-quiet">Cancel</a>
+        <button type="submit" class="btn btn-ink">
+            {{ submit_label }}
+            <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </button>
+    </div>
+</form>

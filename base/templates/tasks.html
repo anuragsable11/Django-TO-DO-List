@@ -1,0 +1,153 @@
+{% extends "app.html" %}
+{% load static %}
+
+{% comment %}
+One template for every view of the list: Tasks, Today, Upcoming, Overdue, a list, Completed, Trash, Search.
+The view decides the heading, the groups of tasks, whether rows can be dragged, and what quick add defaults to.
+{% endcomment %}
+
+{% block title %}{{ heading }}{% endblock %}
+
+{% block app_content %}
+
+<header class="masthead">
+    <div class="masthead-text">
+        <p class="label">{{ kicker }}</p>
+        <h1 class="masthead-title">{% if view == 'list' %}<span class="dot dot-title dot-{{ task_list.color }}" aria-hidden="true"></span>{% endif %}{{ heading }}</h1>
+    </div>
+    <div class="masthead-actions">
+        {% if view == 'list' %}
+        <a href="{% url 'list_edit' task_list.pk %}" class="btn btn-quiet btn-sm">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-edit"></use></svg>
+            Edit list
+        </a>
+        {% endif %}
+        {% if scope and count %}
+        <form method="POST" action="{% url 'complete_all' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="scope" value="{{ scope }}">
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn btn-quiet btn-sm">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+                Complete all
+            </button>
+        </form>
+        <form method="POST" action="{% url 'delete_all' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="scope" value="{{ scope }}">
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn btn-quiet btn-danger-quiet btn-sm">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Clear all
+            </button>
+        </form>
+        {% elif view == 'complete' and count %}
+        <form method="POST" action="{% url 'restore_all' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-sm">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restore"></use></svg>
+                Restore all
+            </button>
+        </form>
+        <form method="POST" action="{% url 'clear_complete' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-quiet btn-danger-quiet btn-sm">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Move all to trash
+            </button>
+        </form>
+        {% elif view == 'trash' and count %}
+        <form method="POST" action="{% url 'delete_all_per' %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm" data-confirm="Permanently delete everything in the trash? This can't be undone.">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Empty trash
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+{% if view == 'search' %}
+<form method="GET" action="{% url 'search' %}" class="search-big" role="search">
+    <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+    <input type="search" name="q" value="{{ query }}" placeholder="Search titles and notes…" aria-label="Search tasks"
+           autocomplete="off" maxlength="100" {% if not query %}autofocus{% endif %} data-search-input>
+    <button type="submit" class="btn btn-ink btn-sm">Search</button>
+</form>
+{% endif %}
+
+{% if quick_add is not None %}
+<form method="POST" action="{% url 'add' %}" class="quick-add">
+    {% csrf_token %}
+    <input type="hidden" name="quick" value="1">
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if quick_add.default_due %}<input type="hidden" name="default_due" value="{{ quick_add.default_due }}">{% endif %}
+    {% if quick_add.default_list %}<input type="hidden" name="default_list" value="{{ quick_add.default_list }}">{% endif %}
+    <span class="quick-add-dot" aria-hidden="true"></span>
+    <input id="quick-add-title" class="quick-add-title" type="text" name="title" maxlength="200" required
+           placeholder="{{ quick_add.placeholder|default:'Write a task…' }}" aria-label="Task title" aria-keyshortcuts="N"
+           aria-describedby="quick-add-hint" autocomplete="off"{% if not count %} autofocus{% endif %}>
+    <input class="quick-add-desc" type="text" name="notes" maxlength="2000"
+           placeholder="Add a note" aria-label="Note (optional)" autocomplete="off">
+    <kbd class="kbd quick-add-kbd" aria-hidden="true">N</kbd>
+    <button type="submit" class="btn btn-ink btn-sm">Add</button>
+</form>
+<p class="quick-add-hint" id="quick-add-hint">
+    Type a day like <b>friday</b> or <b>12 oct</b>, <b>every monday</b> to repeat, <b>#work</b> for a list and <b>!high</b> for priority.
+</p>
+{% endif %}
+
+{% if sorts and count > 1 %}
+<nav class="toolbar" aria-label="Sort tasks">
+    <span class="label">Sort</span>
+    <div class="segmented">
+        {% for key, label in sorts %}
+        <a href="{% url 'home' %}{% if key %}?sort={{ key }}{% endif %}" class="segmented-item{% if sort == key %} is-active{% endif %}"{% if sort == key %} aria-current="true"{% endif %}>{{ label }}</a>
+        {% endfor %}
+    </div>
+    {% if draggable %}<span class="toolbar-hint">Drag the handle to reorder</span>{% endif %}
+</nav>
+{% endif %}
+
+{% if groups %}
+<div class="groups">
+    {% for group in groups %}
+    <section class="group" aria-labelledby="group-{{ forloop.counter }}">
+        {% if group.title %}
+        <h2 class="group-title{% if group.tone %} is-{{ group.tone }}{% endif %}" id="group-{{ forloop.counter }}">
+            {{ group.title }}
+            {% if group.subtitle and group.subtitle != group.title %}<span class="group-sub">{{ group.subtitle }}</span>{% endif %}
+            <span class="group-count">{{ group.tasks|length }}</span>
+        </h2>
+        {% else %}
+        <h2 class="visually-hidden" id="group-{{ forloop.counter }}">{{ heading }}</h2>
+        {% endif %}
+        <ol class="ledger"{% if draggable %} data-sortable data-reorder-url="{% url 'reorder' %}"{% endif %}>
+            {% for task in group.tasks %}
+            {% include "partials/task_row.html" with counter=forloop.counter %}
+            {% endfor %}
+        </ol>
+    </section>
+    {% endfor %}
+</div>
+{% if draggable %}<p class="visually-hidden" aria-live="polite" data-sort-status></p>{% endif %}
+{% else %}
+<div class="empty">
+    <span class="empty-face" aria-hidden="true"><svg><use href="#stripes-face"></use></svg></span>
+    <p class="empty-title">{{ empty.title }}{% if empty.accent %} <em>{{ empty.accent }}</em>{% endif %}</p>
+    <p class="empty-text">{{ empty.text }}</p>
+    {% if empty.link %}
+    <a href="{% url 'home' %}" class="btn btn-outline btn-sm">
+        Go to tasks
+        <svg class="icon icon-sm icon-arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if draggable %}<script src="{% static 'sortable.js' %}" defer></script>{% endif %}
+{% endblock %}

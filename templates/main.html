@@ -35,10 +35,26 @@
     {% if messages %}
     <div class="toasts" role="status">
         {% for message in messages %}
-        <p class="toast toast-{{ message.tags }}">
-            <svg class="icon" aria-hidden="true"><use href="#{% if message.tags == 'error' %}i-alert{% elif message.tags == 'success' %}i-check-circle{% else %}i-info{% endif %}"></use></svg>
+        {% if 'undo' in message.extra_tags and request.session.undo %}
+        <div class="toast toast-{{ message.level_tag }} has-action" data-toast>
+            <svg class="icon" aria-hidden="true"><use href="#i-check-circle"></use></svg>
+            <span>{{ message }}</span>
+            <form method="POST" action="{% url 'undo' %}" class="toast-action">
+                {% csrf_token %}
+                <input type="hidden" name="token" value="{{ request.session.undo.token }}">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="toast-btn" data-undo aria-keyshortcuts="Control+Z Meta+Z">
+                    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-undo"></use></svg>
+                    Undo
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <p class="toast toast-{{ message.level_tag }}">
+            <svg class="icon" aria-hidden="true"><use href="#{% if message.level_tag == 'error' %}i-alert{% elif message.level_tag == 'success' %}i-check-circle{% else %}i-info{% endif %}"></use></svg>
             <span>{{ message }}</span>
         </p>
+        {% endif %}
         {% endfor %}
     </div>
     {% endif %}
@@ -61,6 +77,7 @@
                 <a href="{% url 'about' %}">About</a>
                 {% if user.is_authenticated %}
                 <a href="{% url 'home' %}">My tasks</a>
+                <a href="{% url 'settings' %}">Settings</a>
                 {% else %}
                 <a href="{% url 'login' %}">Log in</a>
                 <a href="{% url 'register' %}">Sign up</a>

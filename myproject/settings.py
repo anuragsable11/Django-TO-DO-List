@@ -96,6 +96,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'base.middleware.TimezoneMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -214,3 +215,31 @@ WHITENOISE_USE_FINDERS=True
 LOGIN_URL='login'
 LOGIN_REDIRECT_URL='home'
 LOGOUT_REDIRECT_URL='landing'
+
+
+# Email: the morning summary of overdue and due-today tasks.
+# Any SMTP service works, e.g. Gmail with an app password (smtp.gmail.com, port 587)
+# or Resend (smtp.resend.com, user "resend", the API key as password).
+# Without EMAIL_HOST, emails are printed to the terminal instead (handy locally).
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_CONFIGURED = bool(EMAIL_HOST)
+if EMAIL_CONFIGURED:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    EMAIL_USE_SSL = EMAIL_PORT == 465
+    EMAIL_USE_TLS = not EMAIL_USE_SSL
+    EMAIL_TIMEOUT = 15
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Doneward <' + (os.environ.get('EMAIL_HOST_USER') or 'noreply@localhost') + '>')
+
+# Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" to /cron/digest/ once a day.
+# The hour must match the schedule in vercel.json ("0 1 * * *" = between 01:00 and 01:59 UTC).
+CRON_SECRET = os.environ.get('CRON_SECRET', '')
+DIGEST_UTC_HOUR = 1
+
+# Public address used for links in emails, e.g. https://doneward.vercel.app
+# (falls back to the address the request came in on).
+SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')

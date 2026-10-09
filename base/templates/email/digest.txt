@@ -1,0 +1,15 @@
+{% autoescape off %}Good morning, {{ user.username }}.
+
+You have {{ summary }}.
+{% if due_today %}
+DUE TODAY
+{% for task in due_today %}  - {{ task.title }}{% if task.is_high %} (high priority){% endif %}{% if task.task_list %} [{{ task.task_list.name }}]{% endif %}
+{% endfor %}{% endif %}{% if overdue %}
+OVERDUE
+{% for task in overdue %}  - {{ task.title }} (due {{ task.due_label }}){% if task.task_list %} [{{ task.task_list.name }}]{% endif %}
+{% endfor %}{% endif %}
+Open your list: {{ site_url }}/tasks/today/
+
+Stripes, from Doneward
+You get this because the morning email is on. Turn it off in Settings: {{ site_url }}/settings/
+{% endautoescape %}

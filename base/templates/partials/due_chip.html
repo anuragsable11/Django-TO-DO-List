@@ -1,0 +1,3 @@
+{% if show %}<time class="chip chip-due is-{{ tone }}" datetime="{{ iso }}" title="{% if tone == 'overdue' %}Overdue, was due {% else %}Due {% endif %}{{ long }}{% if repeat %} · {{ repeat }}{% endif %}">
+    <svg class="icon" aria-hidden="true"><use href="#{% if repeat %}i-repeat{% else %}i-calendar{% endif %}"></use></svg>{% if tone == 'overdue' %}<span class="visually-hidden">Overdue, was due </span>{% endif %}{{ label }}
+</time>{% endif %}
