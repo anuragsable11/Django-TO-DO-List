@@ -124,15 +124,30 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# With DATABASE_URL set (in .env locally, in Vercel's Environment Variables in production),
+def find_database_url():
+    """DATABASE_URL, or the copy that Vercel's Neon integration adds when it is connected
+    with a custom prefix, e.g. downward_DATABASE_URL. Its *_DATABASE_URL_UNPOOLED twin
+    doesn't match, so the pooled URL is the one used."""
+    if os.environ.get('DATABASE_URL'):
+        return os.environ['DATABASE_URL']
+    prefixed = sorted(key for key, value in os.environ.items() if key.upper().endswith('_DATABASE_URL') and value)
+    if len(prefixed) > 1:
+        raise ImproperlyConfigured(
+            f'Several database URLs are set ({", ".join(prefixed)}). Set DATABASE_URL to choose one.'
+        )
+    return os.environ[prefixed[0]] if prefixed else None
+
+
+# With a database URL set (in .env locally, in Vercel's Environment Variables in production),
 # Django uses that Postgres database, e.g. Neon. Without it, a local SQLite file.
-# Vercel's filesystem is read-only, so a deployment always needs DATABASE_URL.
-if os.environ.get('DATABASE_URL'):
+# Vercel's filesystem is read-only, so a deployment always needs one.
+database_url = find_database_url()  # lowercase, so it is not a Django setting shown on debug pages
+if database_url:
     import dj_database_url
     DATABASES = {
         # conn_max_age=0: open a connection per request and close it after, which suits
         # serverless functions; Neon's pooler ("-pooler" host) keeps that cheap.
-        'default': dj_database_url.config(conn_max_age=0, ssl_require=True)
+        'default': dj_database_url.parse(database_url, conn_max_age=0, ssl_require=True)
     }
     # A transaction-mode pooler (PgBouncer, which Neon's pooled URL uses) can't keep
     # server-side cursors open between transactions, so Django must not use them.
@@ -140,7 +155,10 @@ if os.environ.get('DATABASE_URL'):
     # Wait a little longer than libpq's default while a suspended Neon database wakes up.
     DATABASES['default'].setdefault('OPTIONS', {}).setdefault('connect_timeout', 15)
 elif ON_VERCEL:
-    raise ImproperlyConfigured('Set the DATABASE_URL environment variable in Vercel (your Neon connection string).')
+    raise ImproperlyConfigured(
+        'No database URL on Vercel. Set DATABASE_URL (your Neon connection string) in the '
+        "project's Environment Variables, or connect Neon under Storage, then redeploy."
+    )
 else:
     DATABASES = {
         'default': {
